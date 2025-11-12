@@ -4,11 +4,13 @@
     <PackageVersion Include="Bullseye" Version="6.0.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
+    <PackageVersion Include="linq2db.PostgreSQL" Version="5.4.1.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.13" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
     <PackageVersion Include="Serilog" Version="4.3.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />

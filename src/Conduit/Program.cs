@@ -12,8 +12,10 @@ using Microsoft.OpenApi.Models;
 // read database configuration (database provider + database connection) from environment variables
 //Environment.GetEnvironmentVariable(DEFAULT_DATABASE_PROVIDER)
 //Environment.GetEnvironmentVariable(DEFAULT_DATABASE_CONNECTION_STRING)
-var defaultDatabaseConnectionString = "Filename=realworld.db";
-var defaultDatabaseProvider = "sqlite";
+var defaultDatabaseConnectionString = "Host=realworddb.ci1yaskukai6.us-east-1.rds.amazonaws.com;Port=5432;Database=realworld;Username=realword;Password=Admin#*02;Pooling=true;SSL Mode=Require;Trust Server Certificate=true";
+var defaultDatabaseProvider = "postgres";
+//var defaultDatabaseConnectionString = "Filename=realworld.db";
+//var defaultDatabaseProvider = "sqlite";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,10 @@ var databaseProvider = defaultDatabaseProvider;
 
 builder.Services.AddDbContext<ConduitContext>(options =>
 {
+    if (databaseProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase) || databaseProvider.Equals("postgresql", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(connectionString);
+    }else
     if (databaseProvider.ToLowerInvariant().Trim().Equals("sqlite", StringComparison.Ordinal))
     {
         options.UseSqlite(connectionString);
