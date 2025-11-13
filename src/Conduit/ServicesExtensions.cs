@@ -19,8 +19,10 @@ namespace Conduit;
 
 public static class ServicesExtensions
 {
+   
     public static void AddConduit(this IServiceCollection services)
     {
+       
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
         );
