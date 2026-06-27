@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (RealWorld)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // Apunta al archivo .csproj de tu backend
+            "projectPath": "${workspaceFolder}/src/Conduit/Conduit.csproj", 
+            // LE DICE A VS CODE QUE USE TU CONFIGURACIÓN EXACTA:
+            "launchProfile": "RealWorld", 
+            "disableLaunchBrowser": true
+        }
+    ]
+}

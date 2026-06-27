@@ -1,4 +1,5 @@
 {
+  
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
@@ -20,7 +21,7 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DB_CONNECTION_STRING": "C:\\Users\\USER\\source\\repos\\aspnetcore-realworld-example-app\\src\\Conduit\\realworld.db",
+        "DB_CONNECTION_STRING": "C:\\Users\\cancutza\\Documents\\OpenSource\\aspnetcore-realworld-example-app\\src\\Conduit\\realworld.db",
         "DB_TYPE": "sqlite"
       }
     }

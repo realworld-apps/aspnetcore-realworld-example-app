@@ -107,13 +107,24 @@ builder.Services.AddConduit();
 
 builder.Services.AddJwt();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200") // El puerto de tu Angular
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 app.Services.GetRequiredService<ILoggerFactory>().AddSerilogLogging();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseCors("AllowAngular");
+//app.UseCors(x => x.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
-app.UseCors(x => x.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
 app.UseAuthentication();
 app.UseMvc();
