@@ -34,22 +34,6 @@
         "resolved": "4.0.0.2",
         "contentHash": "vXDAkmIB8xMmtnWubDq/uZhpfTXKAHicnTQTJBjkjNvom7eaHf5r0OB3Be+cXzzcQl4O1UOOAYHyN436JSCUlA=="
       },
-      "AWSSDK.SimpleNotificationService": {
-        "type": "Transitive",
-        "resolved": "3.7.400",
-        "contentHash": "x5jqxMywc4/WEh3Mz5qFPi3YaqIgYpPpJLyAWSi1Ie5jpOsqeWKqJ/BZYQV4OvbNnlOMWoEwHIN85p3cLp5KhQ==",
-        "dependencies": {
-          "AWSSDK.Core": "[3.7.400, 4.0.0)"
-        }
-      },
-      "AWSSDK.SQS": {
-        "type": "Transitive",
-        "resolved": "3.7.400",
-        "contentHash": "UHG5JMcvzEHbV/UH13NjBR1KjaMXFMmoZrz9GDHp+JKuFcGPGu1aJ9Vrxkjm0NkDXXjs/WbKcnXISA8mBV91jw==",
-        "dependencies": {
-          "AWSSDK.Core": "[3.7.400, 4.0.0)"
-        }
-      },
       "Azure.Core": {
         "type": "Transitive",
         "resolved": "1.47.1",
@@ -438,25 +422,6 @@
           "OpenTelemetry.Api": "1.16.0"
         }
       },
-      "OpenTelemetry.Extensions.AWS": {
-        "type": "Transitive",
-        "resolved": "1.11.0",
-        "contentHash": "CffYTVeHUBKvuuGuPpU7QRHULcUYkAdNy2treAqSKqgGLqDw/4K4/A5Hc++6UWn6GVg35LsC9ARiJHTBmQorPQ==",
-        "dependencies": {
-          "OpenTelemetry": "[1.11.1, 2.0.0)"
-        }
-      },
-      "OpenTelemetry.Instrumentation.AWS": {
-        "type": "Transitive",
-        "resolved": "1.11.0",
-        "contentHash": "ulsB88pNPHOdQFsDBVN721clEuBViXvzYTcm/G//ayL9JvMUV1kZqpPtnXW6qoIZV9nad8o/A3BdF696b9eKqw==",
-        "dependencies": {
-          "AWSSDK.Core": "3.7.400",
-          "AWSSDK.SQS": "3.7.400",
-          "AWSSDK.SimpleNotificationService": "3.7.400",
-          "OpenTelemetry.Extensions.AWS": "1.11.0"
-        }
-      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.11",
@@ -605,9 +570,9 @@
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.Sqlite": "[10.0.9, )",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.2, )",
+          "Npgsql.OpenTelemetry": "[10.0.3, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.16.0, )",
           "OpenTelemetry.Extensions.Hosting": "[1.16.0, )",
-          "OpenTelemetry.Instrumentation.AWS": "(, )",
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.16.0, )",
           "OpenTelemetry.Instrumentation.Http": "[1.16.0, )",
           "Serilog": "[4.3.0, )",
@@ -719,6 +684,16 @@
           "Microsoft.EntityFrameworkCore": "[10.0.4, 11.0.0)",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.4, 11.0.0)",
           "Npgsql": "10.0.3"
+        }
+      },
+      "Npgsql.OpenTelemetry": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.3, )",
+        "resolved": "10.0.3",
+        "contentHash": "ShsdG/FHxJ2VuWM6tebJL/mCWkcxymmvtENN59c85EsJdT4TStWwwtgZoBu/9UvC0qi1jpFZ6bOfl9ijiWD+vA==",
+        "dependencies": {
+          "Npgsql": "10.0.3",
+          "OpenTelemetry.API": "1.15.3"
         }
       },
       "OpenTelemetry": {

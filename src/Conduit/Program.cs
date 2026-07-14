@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -41,7 +42,8 @@ builder.Services.AddDbContext<ConduitContext>(options =>
     if (databaseProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase) || databaseProvider.Equals("postgresql", StringComparison.OrdinalIgnoreCase))
     {
         options.UseNpgsql(connectionString);
-    }else
+    }
+    else
     if (databaseProvider.ToLowerInvariant().Trim().Equals("sqlite", StringComparison.Ordinal))
     {
         options.UseSqlite(connectionString);
@@ -95,7 +97,7 @@ builder.Services.AddOpenTelemetry()
                 }
             };
         })
-        .AddSource("Microsoft.EntityFrameworkCore")
+        .AddNpgsql()
         .AddOtlpExporter(options =>
         {
             options.Endpoint = new Uri(otlpEndpoint);
