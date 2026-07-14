@@ -10,6 +10,8 @@ using Conduit;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -99,6 +101,7 @@ builder.Services.AddOpenTelemetry()
         .AddService("realworld-demo", serviceVersion: "1.0.0")
         .AddAttributes(new Dictionary<string, object>
         {
+            ["service.namespace"] = "realworld-demo",
             ["deployment.environment"] = deploymentEnvironment
         })
         .AddAttributes(ec2Attributes))
@@ -110,6 +113,15 @@ builder.Services.AddOpenTelemetry()
                 foreach (var attr in ec2Attributes)
                 {
                     activity.SetTag(attr.Key, attr.Value);
+                }
+            };
+            options.EnrichWithHttpResponse = (activity, response) =>
+            {
+                var routeData = response.HttpContext.GetRouteData();
+                if (routeData.Values.TryGetValue("controller", out var controller) &&
+                    routeData.Values.TryGetValue("action", out var action))
+                {
+                    activity.SetTag("code.function.name", $"{controller}.{action}");
                 }
             };
         })
