@@ -11,6 +11,15 @@
           "Microsoft.IdentityModel.JsonWebTokens": "8.14.0"
         }
       },
+      "AWSSDK.EC2": {
+        "type": "Direct",
+        "requested": "[4.0.1, )",
+        "resolved": "4.0.1",
+        "contentHash": "jGWSUxl9+6dxIKr/6QSm1nKeEQL1l/UlTiULta31ZidtwN6BL4CCU/mQObJqQ4GQAFeaBLarwYbI47AQ9tfWcw==",
+        "dependencies": {
+          "AWSSDK.Core": "[4.0.0.2, 5.0.0)"
+        }
+      },
       "FluentValidation": {
         "type": "Direct",
         "requested": "[12.0.0, )",
@@ -157,6 +166,11 @@
           "Swashbuckle.AspNetCore.SwaggerGen": "9.0.6",
           "Swashbuckle.AspNetCore.SwaggerUI": "9.0.6"
         }
+      },
+      "AWSSDK.Core": {
+        "type": "Transitive",
+        "resolved": "4.0.0.2",
+        "contentHash": "vXDAkmIB8xMmtnWubDq/uZhpfTXKAHicnTQTJBjkjNvom7eaHf5r0OB3Be+cXzzcQl4O1UOOAYHyN436JSCUlA=="
       },
       "Azure.Core": {
         "type": "Transitive",

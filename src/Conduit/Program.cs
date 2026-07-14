@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using Amazon;
+using Amazon.EC2;
+using Amazon.EC2.Model;
+using Amazon.Util;
 using Conduit;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
@@ -59,16 +64,37 @@ builder.Services.AddDbContext<ConduitContext>(options =>
 var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://localhost:4317";
 var deploymentEnvironment = Environment.GetEnvironmentVariable("DEPLOYMENT_ENVIRONMENT") ?? "development";
 
+var ec2Attributes = GetEc2Attributes();
+
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService("realworld-demo", serviceVersion: "1.0.0")
         .AddAttributes(new Dictionary<string, object>
         {
             ["deployment.environment"] = deploymentEnvironment
-        }))
+        })
+        .AddAttributes(ec2Attributes))
     .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
+        .AddAspNetCoreInstrumentation(options =>
+        {
+            options.EnrichWithHttpRequest = (activity, _) =>
+            {
+                foreach (var attr in ec2Attributes)
+                {
+                    activity.SetTag(attr.Key, attr.Value);
+                }
+            };
+        })
+        .AddHttpClientInstrumentation(options =>
+        {
+            options.EnrichWithHttpRequestMessage = (activity, _) =>
+            {
+                foreach (var attr in ec2Attributes)
+                {
+                    activity.SetTag(attr.Key, attr.Value);
+                }
+            };
+        })
         .AddSource("Microsoft.EntityFrameworkCore")
         .AddOtlpExporter(options =>
         {
@@ -172,3 +198,59 @@ using (var scope = app.Services.CreateScope())
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 app.Run();
+
+static Dictionary<string, object> GetEc2Attributes()
+{
+    try
+    {
+        var instanceId = EC2InstanceMetadata.InstanceId;
+        if (string.IsNullOrEmpty(instanceId))
+        {
+            return new Dictionary<string, object>();
+        }
+
+        var regionName = EC2InstanceMetadata.AvailabilityZone[..^1];
+        var region = RegionEndpoint.GetBySystemName(regionName);
+        var client = new AmazonEC2Client(region);
+
+        var response = client.DescribeInstancesAsync(
+            new DescribeInstancesRequest { InstanceIds = [instanceId] }).GetAwaiter().GetResult();
+
+        var instance = response.Reservations.First().Instances.First();
+
+        var attributes = new Dictionary<string, object>
+        {
+            ["cloud.platform"] = "aws_ec2",
+            ["host.id"] = instance.InstanceId,
+            ["host.type"] = instance.InstanceType.Value,
+            ["cloud.region"] = regionName,
+            ["os.type"] = instance.PlatformDetails.Contains("Windows", StringComparison.OrdinalIgnoreCase)
+                ? "windows" : "linux",
+            ["aws.ec2.license_model"] = instance.Licenses is null || instance.Licenses.Count == 0
+                ? "No License required" : "Bring your own license",
+            ["aws.ec2.tenancy"] = instance.Placement.Tenancy.Value
+        };
+
+        if (instance.PlatformDetails != "Linux/UNIX" && instance.PlatformDetails != "Windows")
+        {
+            attributes["aws.ec2.platform_details"] = instance.PlatformDetails;
+        }
+
+        if (instance.InstanceLifecycle is not null)
+        {
+            attributes["aws.ec2.instance_lifecycle"] = instance.InstanceLifecycle.Value;
+        }
+
+        if (instance.CapacityReservationId is not null)
+        {
+            attributes["aws.ec2.capacity_reservation_id"] = instance.CapacityReservationId;
+        }
+
+        return attributes;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Warning: Could not fetch EC2 metadata: {ex.Message}");
+        return new Dictionary<string, object>();
+    }
+}

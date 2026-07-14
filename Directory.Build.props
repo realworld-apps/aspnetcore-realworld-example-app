@@ -15,5 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-9cvc-h2w8-phrp" />
   </ItemGroup>
 </Project>
