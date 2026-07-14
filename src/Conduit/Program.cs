@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Npgsql;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -68,6 +69,31 @@ var deploymentEnvironment = Environment.GetEnvironmentVariable("DEPLOYMENT_ENVIR
 
 var ec2Attributes = GetEc2Attributes();
 
+var awsRegion = configuration["AWS:Region"] ?? "us-east-1";
+var rdsInstanceId = configuration["AWS:RDS:InstanceId"] ?? "";
+var rdsAccountId = ec2Attributes.TryGetValue("cloud.account_id", out var acctId) ? acctId?.ToString() : "";
+var rdsArn = !string.IsNullOrEmpty(rdsInstanceId) && !string.IsNullOrEmpty(rdsAccountId?.ToString())
+    ? $"arn:aws:rds:{awsRegion}:{rdsAccountId}:db:{rdsInstanceId}"
+    : "";
+
+var rdsAttributes = new Dictionary<string, object>();
+if (!string.IsNullOrEmpty(rdsInstanceId))
+{
+    rdsAttributes["aws.rds.instance.id"] = rdsInstanceId;
+    rdsAttributes["aws.rds.instance.class"] = configuration["AWS:RDS:InstanceClass"] ?? "";
+    rdsAttributes["aws.region"] = awsRegion;
+    rdsAttributes["aws.rds.engine"] = configuration["AWS:RDS:Engine"] ?? "";
+    rdsAttributes["aws.rds.deployment.option"] = configuration["AWS:RDS:DeploymentOption"] ?? "";
+    rdsAttributes["aws.rds.storage.type"] = configuration["AWS:RDS:StorageType"] ?? "";
+    rdsAttributes["aws.rds.license.model"] = configuration["AWS:RDS:LicenseModel"] ?? "";
+    rdsAttributes["cloud.platform"] = "aws_rds";
+    rdsAttributes["db.system"] = "postgresql";
+    if (!string.IsNullOrEmpty(rdsArn))
+    {
+        rdsAttributes["cloud.resource_id"] = rdsArn;
+    }
+}
+
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService("realworld-demo", serviceVersion: "1.0.0")
@@ -98,6 +124,7 @@ builder.Services.AddOpenTelemetry()
             };
         })
         .AddNpgsql()
+        .AddProcessor(new RdsSpanEnrichmentProcessor(rdsAttributes))
         .AddOtlpExporter(options =>
         {
             options.Endpoint = new Uri(otlpEndpoint);
@@ -220,9 +247,12 @@ static Dictionary<string, object> GetEc2Attributes()
 
         var instance = response.Reservations.First().Instances.First();
 
+        var ownerId = response.Reservations.First().OwnerId;
+
         var attributes = new Dictionary<string, object>
         {
             ["cloud.platform"] = "aws_ec2",
+            ["cloud.account_id"] = ownerId,
             ["host.id"] = instance.InstanceId,
             ["host.type"] = instance.InstanceType.Value,
             ["cloud.region"] = regionName,
@@ -254,5 +284,33 @@ static Dictionary<string, object> GetEc2Attributes()
     {
         Console.WriteLine($"Warning: Could not fetch EC2 metadata: {ex.Message}");
         return new Dictionary<string, object>();
+    }
+}
+
+internal sealed partial class RdsSpanEnrichmentProcessor(Dictionary<string, object> rdsAttributes)
+    : BaseProcessor<Activity>
+{
+    public override void OnEnd(Activity activity)
+    {
+        if (rdsAttributes.Count == 0)
+        {
+            return;
+        }
+
+        if (!IsNpgsqlSpan(activity))
+        {
+            return;
+        }
+
+        foreach (var attr in rdsAttributes)
+        {
+            activity.SetTag(attr.Key, attr.Value);
+        }
+    }
+
+    private static bool IsNpgsqlSpan(Activity activity)
+    {
+        return activity.Source.Name == "Npgsql" ||
+               activity.OperationName.StartsWith("Npgsql", StringComparison.Ordinal);
     }
 }
