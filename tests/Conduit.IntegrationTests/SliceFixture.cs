@@ -17,6 +17,7 @@ public class SliceFixture : IDisposable
     public SliceFixture()
     {
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddConduit();
 
         var builder = new DbContextOptionsBuilder();

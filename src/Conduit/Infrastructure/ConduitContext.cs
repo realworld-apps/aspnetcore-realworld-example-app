@@ -98,11 +98,8 @@ public class ConduitContext(DbContextOptions options) : DbContext(options)
         }
         finally
         {
-            if (_currentTransaction != null)
-            {
-                _currentTransaction.Dispose();
-                _currentTransaction = null;
-            }
+            _currentTransaction?.Dispose();
+            _currentTransaction = null;
         }
     }
 
@@ -114,11 +111,8 @@ public class ConduitContext(DbContextOptions options) : DbContext(options)
         }
         finally
         {
-            if (_currentTransaction != null)
-            {
-                _currentTransaction.Dispose();
-                _currentTransaction = null;
-            }
+            _currentTransaction?.Dispose();
+            _currentTransaction = null;
         }
     }
     #endregion

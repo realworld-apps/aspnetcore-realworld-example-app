@@ -17,10 +17,7 @@ public class ValidatorActionFilter : IActionFilter
 
             foreach (var valuePair in filterContext.ModelState)
             {
-                errors.Add(
-                    valuePair.Key,
-                    valuePair.Value.Errors.Select(x => x.ErrorMessage).ToArray()
-                );
+                errors.Add(valuePair.Key, [.. valuePair.Value.Errors.Select(x => x.ErrorMessage)]);
             }
 
             var content = JsonSerializer.Serialize(new { errors });

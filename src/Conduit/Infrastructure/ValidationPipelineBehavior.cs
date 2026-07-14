@@ -12,7 +12,7 @@ public class ValidationPipelineBehavior<TRequest, TResponse>(
 ) : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private readonly List<IValidator<TRequest>> _validators = validators.ToList();
+    private readonly List<IValidator<TRequest>> _validators = [.. validators];
 
     public async Task<TResponse> Handle(
         TRequest request,

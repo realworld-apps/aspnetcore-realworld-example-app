@@ -43,7 +43,7 @@ Target(
     }
 );
 
-Target(Build, [Format], () => Run("dotnet", "build . -c Release"));
+Target(Build, [Format], () => Run("dotnet", "build Conduit.sln -c Release"));
 
 Target(
     Test,
@@ -67,7 +67,7 @@ Target(
     {
         Run(
             "dotnet",
-            $"publish {project} -c Release -f net8.0 -o ./publish --no-restore --no-build --verbosity=normal"
+            $"publish {project} -c Release -f net10.0 -o ./publish --no-restore --no-build --verbosity=normal"
         );
     }
 );

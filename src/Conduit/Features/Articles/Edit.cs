@@ -69,7 +69,7 @@ public class Edit
 
             // ensure context is tracking any tags that are about to be created so that it won't attempt to insert a duplicate
             context.Tags.AttachRange(
-                articleTagsToCreate.Where(x => x.Tag is not null).Select(a => a.Tag!).ToArray()
+                [.. articleTagsToCreate.Where(x => x.Tag is not null).Select(a => a.Tag!)]
             );
 
             // add the new article tags

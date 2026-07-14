@@ -54,14 +54,12 @@ public class Login
                 );
             }
 
-            if (
-                !person.Hash.SequenceEqual(
-                    await passwordHasher.Hash(
-                        message.User.Password ?? throw new InvalidOperationException(),
-                        person.Salt
-                    )
-                )
-            )
+            var hash = await passwordHasher.Hash(
+                message.User.Password ?? throw new InvalidOperationException(),
+                person.Salt
+            );
+
+            if (!person.Hash.SequenceEqual(hash))
             {
                 throw new RestException(
                     HttpStatusCode.Unauthorized,

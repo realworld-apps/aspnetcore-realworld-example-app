@@ -5,5 +5,5 @@ namespace Conduit.Features.Profiles;
 
 public interface IProfileReader
 {
-    Task<ProfileEnvelope> ReadProfile(string username, CancellationToken cancellationToken);
+    public Task<ProfileEnvelope> ReadProfile(string username, CancellationToken cancellationToken);
 }

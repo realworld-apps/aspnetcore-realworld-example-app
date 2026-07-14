@@ -31,7 +31,7 @@ public class Article
 
     [NotMapped]
     public List<string> TagList =>
-        ArticleTags.Where(x => x.TagId is not null).Select(x => x.TagId!).ToList();
+        [.. ArticleTags.Where(x => x.TagId is not null).Select(x => x.TagId!)];
 
     [JsonIgnore]
     public List<ArticleTag> ArticleTags { get; init; } = new();
