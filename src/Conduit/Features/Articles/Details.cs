@@ -32,7 +32,7 @@ public class Details
             if (article == null)
             {
                 throw new RestException(
-                    HttpStatusCode.NotFound,
+                    HttpStatusCode.InternalServerError,
                     new { Article = Constants.NOT_FOUND }
                 );
             }
