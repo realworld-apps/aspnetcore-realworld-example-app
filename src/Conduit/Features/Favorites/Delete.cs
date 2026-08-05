@@ -32,10 +32,7 @@ public class Delete
                     x => x.Slug == message.Slug,
                     cancellationToken
                 )
-                ?? throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                ?? throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
 
             var person = await context.Persons.FirstOrDefaultAsync(
                 x => x.Username == currentUserAccessor.GetCurrentUsername(),
@@ -43,10 +40,7 @@ public class Delete
             );
             if (person is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             var favorite = await context.ArticleFavorites.FirstOrDefaultAsync(
@@ -65,10 +59,7 @@ public class Delete
                 .FirstOrDefaultAsync(x => x.ArticleId == article.ArticleId, cancellationToken);
             if (article is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             return new ArticleEnvelope(article);

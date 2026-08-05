@@ -21,7 +21,8 @@ public class Create
 
     public class CommandValidator : AbstractValidator<Command>
     {
-        public CommandValidator() => RuleFor(x => x.Model.Comment.Body).NotEmpty();
+        public CommandValidator() =>
+            RuleFor(x => x.Model.Comment.Body).NotEmpty().WithMessage(Constants.BLANK);
     }
 
     public class Handler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
@@ -38,10 +39,7 @@ public class Create
 
             if (article == null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             var author = await context.Persons.FirstAsync(

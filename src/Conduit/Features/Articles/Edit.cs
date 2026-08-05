@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Domain;
@@ -15,7 +16,31 @@ namespace Conduit.Features.Articles;
 
 public class Edit
 {
-    public record ArticleData(string? Title, string? Description, string? Body, string[]? TagList);
+    // the setter records whether tagList was present in the request body: the RealWorld spec
+    // preserves tags when the field is absent, clears them on [], and rejects an explicit null
+    public class ArticleData
+    {
+        private string[]? _tagList;
+
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
+
+        public string? Body { get; set; }
+
+        public string[]? TagList
+        {
+            get => _tagList;
+            set
+            {
+                _tagList = value;
+                TagListSet = true;
+            }
+        }
+
+        [JsonIgnore]
+        public bool TagListSet { get; private set; }
+    }
 
     public record Command(Model Model, string Slug) : IRequest<ArticleEnvelope>;
 
@@ -23,10 +48,17 @@ public class Edit
 
     public class CommandValidator : AbstractValidator<Command>
     {
-        public CommandValidator() => RuleFor(x => x.Model.Article).NotNull();
+        public CommandValidator()
+        {
+            RuleFor(x => x.Model.Article).NotNull();
+            RuleFor(x => x.Model.Article.TagList)
+                .NotNull()
+                .When(x => x.Model.Article is { TagListSet: true });
+        }
     }
 
-    public class Handler(ConduitContext context) : IRequestHandler<Command, ArticleEnvelope>
+    public class Handler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
+        : IRequestHandler<Command, ArticleEnvelope>
     {
         public async Task<ArticleEnvelope> Handle(
             Command message,
@@ -35,24 +67,49 @@ public class Edit
         {
             var article = await context
                 .Articles.Include(x => x.ArticleTags) // include also the article tags since they also need to be updated
+                .Include(x => x.Author)
                 .Where(x => x.Slug == message.Slug)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (article == null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
+            }
+
+            if (article.Author?.Username != currentUserAccessor.GetCurrentUsername())
+            {
+                throw new RestException(HttpStatusCode.Forbidden, "article", Constants.FORBIDDEN);
             }
 
             article.Description = message.Model.Article.Description ?? article.Description;
             article.Body = message.Model.Article.Body ?? article.Body;
-            article.Title = message.Model.Article.Title ?? article.Title;
-            article.Slug = article.Title.GenerateSlug();
+            if (
+                !string.IsNullOrEmpty(message.Model.Article.Title)
+                && message.Model.Article.Title != article.Title
+            )
+            {
+                article.Title = message.Model.Article.Title;
+                var slug = article.Title.GenerateSlug();
+                // keep slugs unique when the new title collides with an existing article
+                var uniqueSlug = slug;
+                for (
+                    var i = 1;
+                    await context.Articles.AnyAsync(
+                        x => x.Slug == uniqueSlug && x.ArticleId != article.ArticleId,
+                        cancellationToken
+                    );
+                    i++
+                )
+                {
+                    uniqueSlug = $"{slug}-{i}";
+                }
+                article.Slug = uniqueSlug;
+            }
 
-            // list of currently saved article tags for the given article
-            var articleTagList = message.Model.Article.TagList ?? Enumerable.Empty<string>();
+            // when tagList is absent from the request the current tags are preserved
+            var articleTagList = message.Model.Article.TagListSet
+                ? (message.Model.Article.TagList ?? [])
+                : article.ArticleTags.Where(x => x.TagId is not null).Select(x => x.TagId!);
 
             var articleTagsToCreate = GetArticleTagsToCreate(article, articleTagList);
             var articleTagsToDelete = GetArticleTagsToDelete(article, articleTagList);
@@ -86,10 +143,7 @@ public class Edit
                 .FirstOrDefaultAsync(x => x.ArticleId == article.ArticleId, cancellationToken);
             if (article is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             return new ArticleEnvelope(article);

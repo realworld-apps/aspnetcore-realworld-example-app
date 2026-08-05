@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Conduit.Infrastructure.Security;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conduit.Features.Articles;
@@ -12,19 +13,20 @@ public class ArticlesController(IMediator mediator) : Controller
 {
     [HttpGet]
     public Task<ArticlesEnvelope> Get(
-        [FromQuery] string tag,
-        [FromQuery] string author,
-        [FromQuery] string favorited,
+        [FromQuery] string? tag,
+        [FromQuery] string? author,
+        [FromQuery] string? favorited,
         [FromQuery] int? limit,
         [FromQuery] int? offset,
         CancellationToken cancellationToken
     ) => mediator.Send(new List.Query(tag, author, favorited, limit, offset), cancellationToken);
 
     [HttpGet("feed")]
+    [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
     public Task<ArticlesEnvelope> GetFeed(
-        [FromQuery] string tag,
-        [FromQuery] string author,
-        [FromQuery] string favorited,
+        [FromQuery] string? tag,
+        [FromQuery] string? author,
+        [FromQuery] string? favorited,
         [FromQuery] int? limit,
         [FromQuery] int? offset,
         CancellationToken cancellationToken
@@ -40,10 +42,10 @@ public class ArticlesController(IMediator mediator) : Controller
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public Task<ArticleEnvelope> Create(
+    public async Task<IActionResult> Create(
         [FromBody] Create.Command command,
         CancellationToken cancellationToken
-    ) => mediator.Send(command, cancellationToken);
+    ) => StatusCode(StatusCodes.Status201Created, await mediator.Send(command, cancellationToken));
 
     [HttpPut("{slug}")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
@@ -55,6 +57,9 @@ public class ArticlesController(IMediator mediator) : Controller
 
     [HttpDelete("{slug}")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public Task Delete(string slug, CancellationToken cancellationToken) =>
-        mediator.Send(new Delete.Command(slug), cancellationToken);
+    public async Task<IActionResult> Delete(string slug, CancellationToken cancellationToken)
+    {
+        await mediator.Send(new Delete.Command(slug), cancellationToken);
+        return NoContent();
+    }
 }

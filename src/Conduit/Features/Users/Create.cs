@@ -24,9 +24,13 @@ public class Create
     {
         public CommandValidator()
         {
-            RuleFor(x => x.User.Username).NotNull().NotEmpty();
-            RuleFor(x => x.User.Email).NotNull().NotEmpty();
-            RuleFor(x => x.User.Password).NotNull().NotEmpty();
+            RuleFor(x => x.User.Username).NotEmpty().WithMessage(Constants.BLANK);
+            RuleFor(x => x.User.Email).NotEmpty().WithMessage(Constants.BLANK);
+            RuleFor(x => x.User.Password)
+                .NotEmpty()
+                .WithMessage(Constants.BLANK)
+                .MinimumLength(8)
+                .WithMessage(Constants.PASSWORD_TOO_SHORT);
         }
     }
 
@@ -45,10 +49,7 @@ public class Create
                     .AnyAsync(cancellationToken)
             )
             {
-                throw new RestException(
-                    HttpStatusCode.BadRequest,
-                    new { Username = Constants.IN_USE }
-                );
+                throw new RestException(HttpStatusCode.Conflict, "username", Constants.IN_USE);
             }
 
             if (
@@ -57,10 +58,7 @@ public class Create
                     .AnyAsync(cancellationToken)
             )
             {
-                throw new RestException(
-                    HttpStatusCode.BadRequest,
-                    new { Email = Constants.IN_USE }
-                );
+                throw new RestException(HttpStatusCode.Conflict, "email", Constants.IN_USE);
             }
 
             var salt = Guid.NewGuid().ToByteArray();

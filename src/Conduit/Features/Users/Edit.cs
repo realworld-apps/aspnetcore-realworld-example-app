@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -15,30 +16,112 @@ namespace Conduit.Features.Users;
 
 public class Edit
 {
+    // setters record which fields were present in the request body: the RealWorld spec
+    // distinguishes an absent field (keep current value) from an explicit null (reject,
+    // or clear for the nullable bio/image fields)
     public class UserData
     {
-        public string? Username { get; set; }
+        private string? _username;
+        private string? _email;
+        private string? _password;
+        private string? _bio;
+        private string? _image;
 
-        public string? Email { get; set; }
+        public string? Username
+        {
+            get => _username;
+            set
+            {
+                _username = value;
+                UsernameSet = true;
+            }
+        }
 
-        public string? Password { get; set; }
+        public string? Email
+        {
+            get => _email;
+            set
+            {
+                _email = value;
+                EmailSet = true;
+            }
+        }
 
-        public string? Bio { get; set; }
+        public string? Password
+        {
+            get => _password;
+            set
+            {
+                _password = value;
+                PasswordSet = true;
+            }
+        }
 
-        public string? Image { get; set; }
+        public string? Bio
+        {
+            get => _bio;
+            set
+            {
+                _bio = value;
+                BioSet = true;
+            }
+        }
+
+        public string? Image
+        {
+            get => _image;
+            set
+            {
+                _image = value;
+                ImageSet = true;
+            }
+        }
+
+        [JsonIgnore]
+        public bool UsernameSet { get; private set; }
+
+        [JsonIgnore]
+        public bool EmailSet { get; private set; }
+
+        [JsonIgnore]
+        public bool PasswordSet { get; private set; }
+
+        [JsonIgnore]
+        public bool BioSet { get; private set; }
+
+        [JsonIgnore]
+        public bool ImageSet { get; private set; }
     }
 
     public record Command(UserData User) : IRequest<UserEnvelope>;
 
     public class CommandValidator : AbstractValidator<Command>
     {
-        public CommandValidator() => RuleFor(x => x.User).NotNull();
+        public CommandValidator()
+        {
+            RuleFor(x => x.User).NotNull();
+            RuleFor(x => x.User.Username)
+                .NotEmpty()
+                .WithMessage(Constants.BLANK)
+                .When(x => x.User.UsernameSet);
+            RuleFor(x => x.User.Email)
+                .NotEmpty()
+                .WithMessage(Constants.BLANK)
+                .When(x => x.User.EmailSet);
+            RuleFor(x => x.User.Password)
+                .NotEmpty()
+                .WithMessage(Constants.BLANK)
+                .MinimumLength(8)
+                .WithMessage(Constants.PASSWORD_TOO_SHORT)
+                .When(x => x.User.PasswordSet);
+        }
     }
 
     public class Handler(
         ConduitContext context,
         IPasswordHasher passwordHasher,
         ICurrentUserAccessor currentUserAccessor,
+        IJwtTokenGenerator jwtTokenGenerator,
         IMapper mapper
     ) : IRequestHandler<Command, UserEnvelope>
     {
@@ -50,18 +133,31 @@ public class Edit
                 .FirstOrDefaultAsync(cancellationToken);
             if (person is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { User = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
             }
 
-            person.Username = message.User.Username ?? person.Username;
-            person.Email = message.User.Email ?? person.Email;
-            person.Bio = message.User.Bio ?? person.Bio;
-            person.Image = message.User.Image ?? person.Image;
+            if (message.User.UsernameSet)
+            {
+                person.Username = message.User.Username;
+            }
 
-            if (!string.IsNullOrWhiteSpace(message.User.Password))
+            if (message.User.EmailSet)
+            {
+                person.Email = message.User.Email;
+            }
+
+            // empty strings on the nullable fields are normalized to null per the spec
+            if (message.User.BioSet)
+            {
+                person.Bio = string.IsNullOrEmpty(message.User.Bio) ? null : message.User.Bio;
+            }
+
+            if (message.User.ImageSet)
+            {
+                person.Image = string.IsNullOrEmpty(message.User.Image) ? null : message.User.Image;
+            }
+
+            if (message.User.PasswordSet && !string.IsNullOrWhiteSpace(message.User.Password))
             {
                 var salt = Guid.NewGuid().ToByteArray();
                 person.Hash = await passwordHasher.Hash(message.User.Password, salt);
@@ -70,7 +166,11 @@ public class Edit
 
             await context.SaveChangesAsync(cancellationToken);
 
-            return new UserEnvelope(mapper.Map<Domain.Person, User>(person));
+            var user = mapper.Map<Domain.Person, User>(person);
+            user.Token = jwtTokenGenerator.CreateToken(
+                person.Username ?? throw new InvalidOperationException()
+            );
+            return new UserEnvelope(user);
         }
     }
 }

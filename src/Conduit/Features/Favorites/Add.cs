@@ -35,10 +35,7 @@ public class Add
 
             if (article == null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             var person = await context.Persons.FirstOrDefaultAsync(
@@ -48,10 +45,7 @@ public class Add
 
             if (person is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             var favorite = await context.ArticleFavorites.FirstOrDefaultAsync(
@@ -77,10 +71,7 @@ public class Add
                 .FirstOrDefaultAsync(x => x.ArticleId == article.ArticleId, cancellationToken);
             if (article is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             return new ArticleEnvelope(article);

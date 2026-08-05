@@ -4,3 +4,7 @@ updates:
     directory: "/" # search in .github/workflows under root `/`
     schedule:
       interval: "weekly" # check for action update every week
+  - package-ecosystem: "gitsubmodule" # keep the vendored RealWorld API spec (hurl/bruno suites) current
+    directory: "/"
+    schedule:
+      interval: "weekly" # the bump PR runs the API test workflows, so spec drift surfaces as a red PR

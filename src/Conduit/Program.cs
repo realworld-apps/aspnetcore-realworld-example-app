@@ -91,16 +91,21 @@ builder
     .Services.AddMvc(opt =>
     {
         opt.Conventions.Add(new GroupByApiRootConvention());
+        // the RealWorld API spec mounts all endpoints under /api
+        opt.Conventions.Add(
+            new ApiRoutePrefixConvention(builder.Configuration["ApiPrefix"] ?? "api")
+        );
         opt.Filters.Add<ValidatorActionFilter>();
         opt.EnableEndpointRouting = false;
     })
+    // the RealWorld spec expects nullable fields (bio, image, ...) to be serialized as explicit nulls
     .AddJsonOptions(opt =>
         opt.JsonSerializerOptions.DefaultIgnoreCondition = System
             .Text
             .Json
             .Serialization
             .JsonIgnoreCondition
-            .WhenWritingNull
+            .Never
     );
 
 builder.Services.AddConduit();

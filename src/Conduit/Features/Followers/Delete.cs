@@ -37,10 +37,7 @@ public class Delete
 
             if (target is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { User = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "profile", Constants.NOT_FOUND);
             }
 
             var observer = await context.Persons.FirstOrDefaultAsync(
@@ -50,10 +47,7 @@ public class Delete
 
             if (observer is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { User = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
             }
 
             var followedPeople = await context.FollowedPeople.FirstOrDefaultAsync(

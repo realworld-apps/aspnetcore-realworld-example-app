@@ -30,7 +30,10 @@ public class DeleteTests : SliceFixture
 
         var dbContext = GetDbContext();
 
-        var articleDeleteHandler = new Delete.QueryHandler(dbContext);
+        var articleDeleteHandler = new Delete.QueryHandler(
+            dbContext,
+            new StubCurrentUserAccessor(UserHelpers.DefaultUserName)
+        );
         await articleDeleteHandler.Handle(deleteCmd, new System.Threading.CancellationToken());
 
         var dbArticle = await ExecuteDbContextAsync(db =>
@@ -64,7 +67,10 @@ public class DeleteTests : SliceFixture
 
         var dbContext = GetDbContext();
 
-        var articleDeleteHandler = new Delete.QueryHandler(dbContext);
+        var articleDeleteHandler = new Delete.QueryHandler(
+            dbContext,
+            new StubCurrentUserAccessor(UserHelpers.DefaultUserName)
+        );
         await articleDeleteHandler.Handle(deleteCmd, new System.Threading.CancellationToken());
 
         var dbArticle = await ExecuteDbContextAsync(db =>
@@ -113,7 +119,10 @@ public class DeleteTests : SliceFixture
 
         var dbContext = GetDbContext();
 
-        var articleDeleteHandler = new Delete.QueryHandler(dbContext);
+        var articleDeleteHandler = new Delete.QueryHandler(
+            dbContext,
+            new StubCurrentUserAccessor(UserHelpers.DefaultUserName)
+        );
         await articleDeleteHandler.Handle(deleteCmd, new System.Threading.CancellationToken());
 
         var deleted = await ExecuteDbContextAsync(db =>

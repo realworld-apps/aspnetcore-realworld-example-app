@@ -93,6 +93,16 @@ public static class ServicesExtensions
 
                         return Task.CompletedTask;
                     },
+                    OnChallenge = (context) =>
+                    {
+                        // the RealWorld spec expects a JSON body on 401 responses
+                        context.HandleResponse();
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json";
+                        return context.Response.WriteAsync(
+                            """{"errors":{"token":["is missing"]}}"""
+                        );
+                    },
                 };
             });
     }
