@@ -29,7 +29,7 @@ public class ProfileReader(
             throw new RestException(HttpStatusCode.NotFound, "profile", Constants.NOT_FOUND);
         }
 
-        var profile = mapper.Map<Domain.Person, Profile>(person);
+        var profile = mapper.PersonToProfile(person);
 
         if (currentUserName != null)
         {
