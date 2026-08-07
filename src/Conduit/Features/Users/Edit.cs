@@ -138,13 +138,31 @@ public class Edit
                 throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
             }
 
-            if (message.User.UsernameSet)
+            if (message.User.UsernameSet && message.User.Username != person.Username)
             {
+                if (
+                    await context
+                        .Persons.Where(x => x.Username == message.User.Username)
+                        .AnyAsync(cancellationToken)
+                )
+                {
+                    throw new RestException(HttpStatusCode.Conflict, "username", Constants.IN_USE);
+                }
+
                 person.Username = message.User.Username;
             }
 
-            if (message.User.EmailSet)
+            if (message.User.EmailSet && message.User.Email != person.Email)
             {
+                if (
+                    await context
+                        .Persons.Where(x => x.Email == message.User.Email)
+                        .AnyAsync(cancellationToken)
+                )
+                {
+                    throw new RestException(HttpStatusCode.Conflict, "email", Constants.IN_USE);
+                }
+
                 person.Email = message.User.Email;
             }
 
