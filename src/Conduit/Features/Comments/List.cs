@@ -21,7 +21,7 @@ public class List
         {
             var article = await context
                 .Articles.Include(x => x.Comments)
-                .ThenInclude(x => x.Author)
+                    .ThenInclude(x => x.Author)
                 .FirstOrDefaultAsync(x => x.Slug == message.Slug, cancellationToken);
 
             if (article == null)

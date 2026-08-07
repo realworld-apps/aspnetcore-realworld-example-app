@@ -27,7 +27,7 @@ public class Delete
             var article =
                 await context
                     .Articles.Include(x => x.Comments)
-                    .ThenInclude(x => x.Author)
+                        .ThenInclude(x => x.Author)
                     .FirstOrDefaultAsync(x => x.Slug == message.Slug, cancellationToken)
                 ?? throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
 
