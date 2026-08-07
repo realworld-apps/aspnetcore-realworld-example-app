@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Articles;
@@ -23,7 +23,7 @@ public class List
     public class QueryHandler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
         : IRequestHandler<Query, ArticlesEnvelope>
     {
-        public async Task<ArticlesEnvelope> Handle(
+        public async ValueTask<ArticlesEnvelope> Handle(
             Query message,
             CancellationToken cancellationToken
         )

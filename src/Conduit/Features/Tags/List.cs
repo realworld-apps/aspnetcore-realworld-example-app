@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Infrastructure;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Tags;
@@ -14,7 +14,10 @@ public class List
 
     public class QueryHandler(ConduitContext context) : IRequestHandler<Query, TagsEnvelope>
     {
-        public async Task<TagsEnvelope> Handle(Query message, CancellationToken cancellationToken)
+        public async ValueTask<TagsEnvelope> Handle(
+            Query message,
+            CancellationToken cancellationToken
+        )
         {
             var tags = await context
                 .Tags.OrderBy(x => x.TagId)

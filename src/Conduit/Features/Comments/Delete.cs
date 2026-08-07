@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Comments;
@@ -22,7 +22,7 @@ public class Delete
     public class QueryHandler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
         : IRequestHandler<Command>
     {
-        public async Task Handle(Command message, CancellationToken cancellationToken)
+        public async ValueTask<Unit> Handle(Command message, CancellationToken cancellationToken)
         {
             var article =
                 await context
@@ -42,7 +42,7 @@ public class Delete
 
             context.Comments.Remove(comment);
             await context.SaveChangesAsync(cancellationToken);
-            await Task.FromResult(Unit.Value);
+            return Unit.Value;
         }
     }
 }

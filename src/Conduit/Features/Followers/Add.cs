@@ -6,7 +6,7 @@ using Conduit.Features.Profiles;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Followers;
@@ -26,7 +26,7 @@ public class Add
         IProfileReader profileReader
     ) : IRequestHandler<Command, ProfileEnvelope>
     {
-        public async Task<ProfileEnvelope> Handle(
+        public async ValueTask<ProfileEnvelope> Handle(
             Command message,
             CancellationToken cancellationToken
         )

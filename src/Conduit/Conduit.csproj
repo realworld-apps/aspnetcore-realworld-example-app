@@ -11,7 +11,11 @@
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="FluentValidation" />
-    <PackageReference Include="MediatR" />
+    <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="Mediator.SourceGenerator">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 </Project>

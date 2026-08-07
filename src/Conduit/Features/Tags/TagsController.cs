@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conduit.Features.Tags;
@@ -9,6 +9,6 @@ namespace Conduit.Features.Tags;
 public class TagsController(IMediator mediator) : Controller
 {
     [HttpGet]
-    public Task<TagsEnvelope> Get(CancellationToken cancellationToken) =>
+    public ValueTask<TagsEnvelope> Get(CancellationToken cancellationToken) =>
         mediator.Send(new List.Query(), cancellationToken);
 }

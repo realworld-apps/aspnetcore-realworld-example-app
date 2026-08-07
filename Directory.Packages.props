@@ -13,7 +13,8 @@
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
-    <PackageVersion Include="MediatR" Version="12.5.0" />
+    <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <PackageVersion Include="SimpleExec" Version="13.0.0" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />

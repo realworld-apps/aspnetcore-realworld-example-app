@@ -6,7 +6,7 @@ using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using Conduit.Infrastructure.Security;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Users;
@@ -26,7 +26,10 @@ public class Details
         ConduitMapper mapper
     ) : IRequestHandler<Query, UserEnvelope>
     {
-        public async Task<UserEnvelope> Handle(Query message, CancellationToken cancellationToken)
+        public async ValueTask<UserEnvelope> Handle(
+            Query message,
+            CancellationToken cancellationToken
+        )
         {
             var person = await context
                 .Persons.AsNoTracking()

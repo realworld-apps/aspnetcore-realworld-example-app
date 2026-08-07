@@ -17,14 +17,17 @@
           "FluentValidation": "12.1.1"
         }
       },
-      "MediatR": {
+      "Mediator.Abstractions": {
         "type": "Direct",
-        "requested": "[12.5.0, )",
-        "resolved": "12.5.0",
-        "contentHash": "vqm2H8/nqL5NAJHPhsG1JOPwfkmbVrPyh4svdoRzu+uZh6Ex7PRoHBGsLYC0/RWCEJFqD1ohHNpteQvql9OktA==",
-        "dependencies": {
-          "MediatR.Contracts": "[2.0.1, 3.0.0)"
-        }
+        "requested": "[3.0.2, )",
+        "resolved": "3.0.2",
+        "contentHash": "TytjnyN8gLObZBxkM7HHPFJF3LHtk6Y8mHW56ONuXRuVEK6Fmed3f0z79H9TpmoZQP2zQAIS4/0O9R2w0v02qw=="
+      },
+      "Mediator.SourceGenerator": {
+        "type": "Direct",
+        "requested": "[3.0.2, )",
+        "resolved": "3.0.2",
+        "contentHash": "yGQzb8Or3nGsQJnVUQIQHr/04LeThd3qMZV0gvgMtXdgH35Rw2xJ2XyQ87v6HhNYOUZ2iirRjUWceebyNKMF7Q=="
       },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {
         "type": "Direct",
@@ -137,11 +140,6 @@
           "Microsoft.Identity.Client": "4.73.1",
           "Microsoft.Identity.Client.Extensions.Msal": "4.73.1"
         }
-      },
-      "MediatR.Contracts": {
-        "type": "Transitive",
-        "resolved": "2.0.1",
-        "contentHash": "FYv95bNT4UwcNA+G/J1oX5OpRiSUxteXaUt2BJbRSdRNiIUNbggJF69wy6mnk2wYToaanpdXZdCwVylt96MpwQ=="
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",

@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+using Mediator;
 
 namespace Conduit.Infrastructure;
 
@@ -12,11 +12,11 @@ namespace Conduit.Infrastructure;
 /// <typeparam name="TResponse"></typeparam>
 public class DBContextTransactionPipelineBehavior<TRequest, TResponse>(ConduitContext context)
     : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : notnull, IMessage
 {
-    public async Task<TResponse> Handle(
+    public async ValueTask<TResponse> Handle(
         TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -26,7 +26,7 @@ public class DBContextTransactionPipelineBehavior<TRequest, TResponse>(ConduitCo
         {
             context.BeginTransaction();
 
-            result = await next();
+            result = await next(request, cancellationToken);
 
             context.CommitTransaction();
         }

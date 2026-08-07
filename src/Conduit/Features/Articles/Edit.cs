@@ -9,7 +9,7 @@ using Conduit.Domain;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Articles;
@@ -60,7 +60,7 @@ public class Edit
     public class Handler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
         : IRequestHandler<Command, ArticleEnvelope>
     {
-        public async Task<ArticleEnvelope> Handle(
+        public async ValueTask<ArticleEnvelope> Handle(
             Command message,
             CancellationToken cancellationToken
         )

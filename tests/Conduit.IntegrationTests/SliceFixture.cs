@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Conduit.Infrastructure;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -46,21 +46,35 @@ public class SliceFixture : IDisposable
         return await action(scope.ServiceProvider);
     }
 
-    public Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request) =>
-        ExecuteScopeAsync(sp =>
+    public ValueTask<TResponse> SendAsync<TResponse>(IRequest<TResponse> request) =>
+        ExecuteValueTaskScopeAsync(sp =>
         {
             var mediator = sp.GetRequiredService<IMediator>();
 
             return mediator.Send(request);
         });
 
-    public Task SendAsync(IRequest request) =>
-        ExecuteScopeAsync(sp =>
+    public ValueTask SendAsync(IRequest request) =>
+        ExecuteValueTaskScopeAsync(async sp =>
         {
             var mediator = sp.GetRequiredService<IMediator>();
 
-            return mediator.Send(request);
+            await mediator.Send(request);
         });
+
+    private async ValueTask<T> ExecuteValueTaskScopeAsync<T>(
+        Func<IServiceProvider, ValueTask<T>> action
+    )
+    {
+        using var scope = _scopeFactory.CreateScope();
+        return await action(scope.ServiceProvider);
+    }
+
+    private async ValueTask ExecuteValueTaskScopeAsync(Func<IServiceProvider, ValueTask> action)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        await action(scope.ServiceProvider);
+    }
 
     public Task ExecuteDbContextAsync(Func<ConduitContext, Task> action) =>
         ExecuteScopeAsync(sp => action(sp.GetRequiredService<ConduitContext>()));

@@ -3,20 +3,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentValidation;
-using MediatR;
+using Mediator;
 
 namespace Conduit.Infrastructure;
 
 public class ValidationPipelineBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators
 ) : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : notnull, IMessage
 {
     private readonly List<IValidator<TRequest>> _validators = [.. validators];
 
-    public async Task<TResponse> Handle(
+    public async ValueTask<TResponse> Handle(
         TRequest request,
-        RequestHandlerDelegate<TResponse> next,
+        MessageHandlerDelegate<TRequest, TResponse> next,
         CancellationToken cancellationToken
     )
     {
@@ -32,6 +32,6 @@ public class ValidationPipelineBehavior<TRequest, TResponse>(
             throw new ValidationException(failures);
         }
 
-        return await next();
+        return await next(request, cancellationToken);
     }
 }

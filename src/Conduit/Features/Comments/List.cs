@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Comments;
@@ -14,7 +14,7 @@ public class List
 
     public class QueryHandler(ConduitContext context) : IRequestHandler<Query, CommentsEnvelope>
     {
-        public async Task<CommentsEnvelope> Handle(
+        public async ValueTask<CommentsEnvelope> Handle(
             Query message,
             CancellationToken cancellationToken
         )

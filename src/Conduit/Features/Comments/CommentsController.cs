@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Infrastructure.Security;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ public class CommentsController(IMediator mediator) : Controller
 {
     [HttpPost("{slug}/comments")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public async Task<IActionResult> Create(
+    public async ValueTask<IActionResult> Create(
         string slug,
         [FromBody] Create.Model model,
         CancellationToken cancellationToken
@@ -24,12 +24,12 @@ public class CommentsController(IMediator mediator) : Controller
         );
 
     [HttpGet("{slug}/comments")]
-    public Task<CommentsEnvelope> Get(string slug, CancellationToken cancellationToken) =>
+    public ValueTask<CommentsEnvelope> Get(string slug, CancellationToken cancellationToken) =>
         mediator.Send(new List.Query(slug), cancellationToken);
 
     [HttpDelete("{slug}/comments/{id}")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public async Task<IActionResult> Delete(
+    public async ValueTask<IActionResult> Delete(
         string slug,
         int id,
         CancellationToken cancellationToken

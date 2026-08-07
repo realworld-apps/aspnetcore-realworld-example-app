@@ -8,7 +8,7 @@ using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using Conduit.Infrastructure.Security;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Users;
@@ -40,7 +40,10 @@ public class Create
         ConduitMapper mapper
     ) : IRequestHandler<Command, UserEnvelope>
     {
-        public async Task<UserEnvelope> Handle(Command message, CancellationToken cancellationToken)
+        public async ValueTask<UserEnvelope> Handle(
+            Command message,
+            CancellationToken cancellationToken
+        )
         {
             if (
                 await context

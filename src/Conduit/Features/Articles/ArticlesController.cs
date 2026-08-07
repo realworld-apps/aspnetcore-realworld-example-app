@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Infrastructure.Security;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +12,7 @@ namespace Conduit.Features.Articles;
 public class ArticlesController(IMediator mediator) : Controller
 {
     [HttpGet]
-    public Task<ArticlesEnvelope> Get(
+    public ValueTask<ArticlesEnvelope> Get(
         [FromQuery] string? tag,
         [FromQuery] string? author,
         [FromQuery] string? favorited,
@@ -23,7 +23,7 @@ public class ArticlesController(IMediator mediator) : Controller
 
     [HttpGet("feed")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public Task<ArticlesEnvelope> GetFeed(
+    public ValueTask<ArticlesEnvelope> GetFeed(
         [FromQuery] string? tag,
         [FromQuery] string? author,
         [FromQuery] string? favorited,
@@ -37,19 +37,19 @@ public class ArticlesController(IMediator mediator) : Controller
         );
 
     [HttpGet("{slug}")]
-    public Task<ArticleEnvelope> Get(string slug, CancellationToken cancellationToken) =>
+    public ValueTask<ArticleEnvelope> Get(string slug, CancellationToken cancellationToken) =>
         mediator.Send(new Details.Query(slug), cancellationToken);
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public async Task<IActionResult> Create(
+    public async ValueTask<IActionResult> Create(
         [FromBody] Create.Command command,
         CancellationToken cancellationToken
     ) => StatusCode(StatusCodes.Status201Created, await mediator.Send(command, cancellationToken));
 
     [HttpPut("{slug}")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public Task<ArticleEnvelope> Edit(
+    public ValueTask<ArticleEnvelope> Edit(
         string slug,
         [FromBody] Edit.Model model,
         CancellationToken cancellationToken
@@ -57,7 +57,7 @@ public class ArticlesController(IMediator mediator) : Controller
 
     [HttpDelete("{slug}")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public async Task<IActionResult> Delete(string slug, CancellationToken cancellationToken)
+    public async ValueTask<IActionResult> Delete(string slug, CancellationToken cancellationToken)
     {
         await mediator.Send(new Delete.Command(slug), cancellationToken);
         return NoContent();

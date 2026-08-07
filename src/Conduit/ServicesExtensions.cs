@@ -1,11 +1,10 @@
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using Conduit.Features.Profiles;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Security;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,14 +20,15 @@ public static class ServicesExtensions
 {
     public static void AddConduit(this IServiceCollection services)
     {
-        services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
-        );
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>));
-        services.AddScoped(
-            typeof(IPipelineBehavior<,>),
-            typeof(DBContextTransactionPipelineBehavior<,>)
-        );
+        services.AddMediator(options =>
+        {
+            options.ServiceLifetime = ServiceLifetime.Scoped;
+            options.PipelineBehaviors =
+            [
+                typeof(ValidationPipelineBehavior<,>),
+                typeof(DBContextTransactionPipelineBehavior<,>),
+            ];
+        });
 
         services.AddValidatorsFromAssemblyContaining<Details.QueryValidator>();
 

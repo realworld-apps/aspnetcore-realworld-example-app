@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using FluentValidation;
-using MediatR;
+using Mediator;
 
 namespace Conduit.Features.Profiles;
 
@@ -17,7 +17,9 @@ public class Details
     public class QueryHandler(IProfileReader profileReader)
         : IRequestHandler<Query, ProfileEnvelope>
     {
-        public Task<ProfileEnvelope> Handle(Query message, CancellationToken cancellationToken) =>
-            profileReader.ReadProfile(message.Username, cancellationToken);
+        public async ValueTask<ProfileEnvelope> Handle(
+            Query message,
+            CancellationToken cancellationToken
+        ) => await profileReader.ReadProfile(message.Username, cancellationToken);
     }
 }

@@ -6,7 +6,7 @@ using Conduit.Domain;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using FluentValidation;
-using MediatR;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Comments;
@@ -17,7 +17,7 @@ public class Create
 
     public record Command(Model Model, string Slug) : IRequest<CommentEnvelope>;
 
-    public record Model(CommentData Comment) : IRequest<CommentEnvelope>;
+    public record Model(CommentData Comment);
 
     public class CommandValidator : AbstractValidator<Command>
     {
@@ -28,7 +28,7 @@ public class Create
     public class Handler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
         : IRequestHandler<Command, CommentEnvelope>
     {
-        public async Task<CommentEnvelope> Handle(
+        public async ValueTask<CommentEnvelope> Handle(
             Command message,
             CancellationToken cancellationToken
         )
