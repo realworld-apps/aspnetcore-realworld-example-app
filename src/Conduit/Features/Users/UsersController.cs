@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conduit.Features.Users;
@@ -9,10 +10,14 @@ namespace Conduit.Features.Users;
 public class UsersController(IMediator mediator)
 {
     [HttpPost]
-    public Task<UserEnvelope> Create(
+    public async Task<ObjectResult> Create(
         [FromBody] Create.Command command,
         CancellationToken cancellationToken
-    ) => mediator.Send(command, cancellationToken);
+    ) =>
+        new(await mediator.Send(command, cancellationToken))
+        {
+            StatusCode = StatusCodes.Status201Created,
+        };
 
     [HttpPost("login")]
     public Task<UserEnvelope> Login(

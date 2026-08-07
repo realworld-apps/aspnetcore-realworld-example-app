@@ -12,9 +12,9 @@ namespace Conduit.Features.Articles;
 public class List
 {
     public record Query(
-        string Tag,
-        string Author,
-        string FavoritedUsername,
+        string? Tag,
+        string? Author,
+        string? FavoritedUsername,
         int? Limit,
         int? Offset,
         bool IsFeed = false
@@ -32,8 +32,10 @@ public class List
 
             if (message.IsFeed && currentUserAccessor.GetCurrentUsername() != null)
             {
+                // note: Person.Followers holds the FollowedPeople rows where this person is the
+                // observer, i.e. the people this person follows
                 var currentUser = await context
-                    .Persons.Include(x => x.Following)
+                    .Persons.Include(x => x.Followers)
                     .FirstOrDefaultAsync(
                         x => x.Username == currentUserAccessor.GetCurrentUsername(),
                         cancellationToken
@@ -41,13 +43,10 @@ public class List
 
                 if (currentUser is null)
                 {
-                    throw new RestException(
-                        HttpStatusCode.NotFound,
-                        new { User = Constants.NOT_FOUND }
-                    );
+                    throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
                 }
                 queryable = queryable.Where(x =>
-                    currentUser.Following.Select(y => y.TargetId).Contains(x.Author!.PersonId)
+                    currentUser.Followers.Select(y => y.TargetId).Contains(x.Author!.PersonId)
                 );
             }
 
@@ -105,10 +104,31 @@ public class List
 
             var articles = await queryable
                 .OrderByDescending(x => x.CreatedAt)
+                .ThenByDescending(x => x.ArticleId)
                 .Skip(message.Offset ?? 0)
                 .Take(message.Limit ?? 20)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+
+            // the spec omits the article body in list responses (null values are not serialized)
+            foreach (var article in articles)
+            {
+                article.Body = null;
+            }
+
+            // populate author.following for the current user
+            var currentUsername = currentUserAccessor.GetCurrentUsername();
+            if (currentUsername != null)
+            {
+                var followedIds = await context
+                    .FollowedPeople.Where(x => x.Observer!.Username == currentUsername)
+                    .Select(x => x.TargetId)
+                    .ToListAsync(cancellationToken);
+                foreach (var author in articles.Select(x => x.Author))
+                {
+                    author?.IsFollowedByCurrentUser = followedIds.Contains(author.PersonId);
+                }
+            }
 
             return new ArticlesEnvelope { Articles = articles, ArticlesCount = queryable.Count() };
         }

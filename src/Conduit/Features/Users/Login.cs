@@ -28,8 +28,8 @@ public class Login
         public CommandValidator()
         {
             RuleFor(x => x.User).NotNull();
-            RuleFor(x => x.User.Email).NotNull().NotEmpty();
-            RuleFor(x => x.User.Password).NotNull().NotEmpty();
+            RuleFor(x => x.User.Email).NotEmpty().WithMessage(Constants.BLANK);
+            RuleFor(x => x.User.Password).NotEmpty().WithMessage(Constants.BLANK);
         }
     }
 
@@ -47,10 +47,7 @@ public class Login
                 .SingleOrDefaultAsync(cancellationToken);
             if (person == null)
             {
-                throw new RestException(
-                    HttpStatusCode.Unauthorized,
-                    new { Error = "Invalid email / password." }
-                );
+                throw new RestException(HttpStatusCode.Unauthorized, "credentials", "invalid");
             }
 
             var hash = await passwordHasher.Hash(
@@ -60,10 +57,7 @@ public class Login
 
             if (!person.Hash.SequenceEqual(hash))
             {
-                throw new RestException(
-                    HttpStatusCode.Unauthorized,
-                    new { Error = "Invalid email / password." }
-                );
+                throw new RestException(HttpStatusCode.Unauthorized, "credentials", "invalid");
             }
 
             var user = mapper.PersonToUser(person);

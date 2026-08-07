@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace Conduit.Domain;
@@ -10,11 +11,17 @@ public class Person
 
     public string? Username { get; set; }
 
+    [JsonIgnore]
     public string? Email { get; set; }
 
     public string? Bio { get; set; }
 
     public string? Image { get; set; }
+
+    // whether the current user follows this person; only populated where the spec requires it
+    [NotMapped]
+    [JsonPropertyName("following")]
+    public bool IsFollowedByCurrentUser { get; set; }
 
     [JsonIgnore]
     public List<ArticleFavorite> ArticleFavorites { get; init; } = new();

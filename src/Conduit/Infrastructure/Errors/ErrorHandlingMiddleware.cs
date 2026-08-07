@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -47,6 +48,20 @@ public class ErrorHandlingMiddleware(
                 context.Response.StatusCode = (int)re.Code;
                 result = JsonSerializer.Serialize(new { errors = re.Errors });
                 break;
+            case FluentValidation.ValidationException ve:
+                context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                result = JsonSerializer.Serialize(
+                    new
+                    {
+                        errors = ve
+                            .Errors.GroupBy(e => ToFieldName(e.PropertyName))
+                            .ToDictionary(
+                                g => g.Key,
+                                g => g.Select(e => e.ErrorMessage).Distinct().ToArray()
+                            ),
+                    }
+                );
+                break;
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 LOGGER_MESSAGE(logger, "Unhandled Exception", exception);
@@ -58,5 +73,12 @@ public class ErrorHandlingMiddleware(
 
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsync(result);
+    }
+
+    // "Model.Comment.Body" -> "body", "Article.TagList" -> "tagList"
+    private static string ToFieldName(string propertyName)
+    {
+        var name = propertyName.Split('.')[^1];
+        return name.Length == 0 ? name : char.ToLowerInvariant(name[0]) + name[1..];
     }
 }

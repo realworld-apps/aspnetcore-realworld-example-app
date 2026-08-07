@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Conduit.Features.Articles;
+using Conduit.IntegrationTests.Features.Users;
 using Xunit;
 
 namespace Conduit.IntegrationTests.Features.Articles;
@@ -25,19 +26,23 @@ public class EditTests : SliceFixture
 
         var command = new Edit.Command(
             new(
-                new Edit.ArticleData(
-                    "Updated " + createdArticle.Title,
-                    "Updated " + createdArticle.Description,
-                    "Updated " + createdArticle.Body,
-                    [createdArticle.TagList[1], "tag3"]
-                )
+                new Edit.ArticleData
+                {
+                    Title = "Updated " + createdArticle.Title,
+                    Description = "Updated " + createdArticle.Description,
+                    Body = "Updated " + createdArticle.Body,
+                    TagList = [createdArticle.TagList[1], "tag3"],
+                }
             ),
             createdArticle.Slug ?? throw new InvalidOperationException()
         );
 
         var dbContext = GetDbContext();
 
-        var articleEditHandler = new Edit.Handler(dbContext);
+        var articleEditHandler = new Edit.Handler(
+            dbContext,
+            new StubCurrentUserAccessor(UserHelpers.DefaultUserName)
+        );
         var edited = await articleEditHandler.Handle(
             command,
             new System.Threading.CancellationToken()

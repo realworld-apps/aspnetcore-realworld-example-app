@@ -26,10 +26,7 @@ public class List
 
             if (article == null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { Article = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
             return new CommentsEnvelope(article.Comments);

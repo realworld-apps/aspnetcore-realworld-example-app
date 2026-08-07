@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Conduit.Infrastructure.Security;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conduit.Features.Comments;
@@ -12,11 +13,15 @@ public class CommentsController(IMediator mediator) : Controller
 {
     [HttpPost("{slug}/comments")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public Task<CommentEnvelope> Create(
+    public async Task<IActionResult> Create(
         string slug,
         [FromBody] Create.Model model,
         CancellationToken cancellationToken
-    ) => mediator.Send(new Create.Command(model, slug), cancellationToken);
+    ) =>
+        StatusCode(
+            StatusCodes.Status201Created,
+            await mediator.Send(new Create.Command(model, slug), cancellationToken)
+        );
 
     [HttpGet("{slug}/comments")]
     public Task<CommentsEnvelope> Get(string slug, CancellationToken cancellationToken) =>
@@ -24,6 +29,13 @@ public class CommentsController(IMediator mediator) : Controller
 
     [HttpDelete("{slug}/comments/{id}")]
     [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-    public Task Delete(string slug, int id, CancellationToken cancellationToken) =>
-        mediator.Send(new Delete.Command(slug, id), cancellationToken);
+    public async Task<IActionResult> Delete(
+        string slug,
+        int id,
+        CancellationToken cancellationToken
+    )
+    {
+        await mediator.Send(new Delete.Command(slug, id), cancellationToken);
+        return NoContent();
+    }
 }

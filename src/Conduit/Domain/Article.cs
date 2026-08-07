@@ -17,6 +17,8 @@ public class Article
 
     public string? Description { get; set; }
 
+    // omitted (nulled out) in list responses per the RealWorld spec
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Body { get; set; }
 
     public Person? Author { get; init; }

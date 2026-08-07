@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Conduit.Domain;
 using Conduit.Infrastructure;
+using Conduit.Infrastructure.Errors;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,9 +29,9 @@ public class Create
     {
         public ArticleDataValidator()
         {
-            RuleFor(x => x.Title).NotNull().NotEmpty();
-            RuleFor(x => x.Description).NotNull().NotEmpty();
-            RuleFor(x => x.Body).NotNull().NotEmpty();
+            RuleFor(x => x.Title).NotEmpty().WithMessage(Constants.BLANK);
+            RuleFor(x => x.Description).NotEmpty().WithMessage(Constants.BLANK);
+            RuleFor(x => x.Body).NotEmpty().WithMessage(Constants.BLANK);
         }
     }
 
@@ -68,6 +69,18 @@ public class Create
                 tags.Add(t);
             }
 
+            var slug = message.Article.Title.GenerateSlug();
+            // duplicate titles are allowed: each article gets a unique slug
+            var uniqueSlug = slug;
+            for (
+                var i = 1;
+                await context.Articles.AnyAsync(x => x.Slug == uniqueSlug, cancellationToken);
+                i++
+            )
+            {
+                uniqueSlug = $"{slug}-{i}";
+            }
+
             var article = new Article
             {
                 Author = author,
@@ -76,7 +89,7 @@ public class Create
                 UpdatedAt = DateTime.UtcNow,
                 Description = message.Article.Description,
                 Title = message.Article.Title,
-                Slug = message.Article.Title.GenerateSlug(),
+                Slug = uniqueSlug,
             };
             await context.Articles.AddAsync(article, cancellationToken);
 

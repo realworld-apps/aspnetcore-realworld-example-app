@@ -53,6 +53,19 @@ The above might work for Docker on Windows
 
 - `http://localhost:5000/swagger`
 
+## RealWorld API spec tests
+
+The official [RealWorld API spec](https://github.com/realworld-apps/realworld) test collections ([Hurl](https://hurl.dev) and [Bruno](https://www.usebruno.com)) run against this implementation. The spec repo is vendored as the `realworld` git submodule:
+
+- `make submodule` fetches the spec (`git submodule update --init realworld`)
+- `make test-hurl-with-managed-server` starts the API on a fresh SQLite database, runs the Hurl suite, and shuts it down (requires [hurl](https://hurl.dev))
+- `make test-bruno-with-managed-server` same with the Bruno collection (requires [bun](https://bun.sh))
+- `make test-hurl` / `make test-bruno` run the suites against an already running server (`make run-local`)
+
+Both suites run in CI via the “RealWorld API Tests” workflow.
+
+All endpoints are rooted under `/api` as the spec requires; the prefix can be changed through the `ApiPrefix` configuration key (appsettings or environment variable).
+
 ## GitHub Actions build
 
 ![Build and Test](https://github.com/gothinkster/aspnetcore-realworld-example-app/workflows/Build%20and%20Test/badge.svg)

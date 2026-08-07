@@ -34,10 +34,7 @@ public class Details
 
             if (person == null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { User = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
             }
 
             var user = mapper.PersonToUser(person);

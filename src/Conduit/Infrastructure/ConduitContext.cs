@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using Conduit.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,24 @@ public class ConduitContext(DbContextOptions options) : DbContext(options)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // timestamps are stored as UTC; restore the DateTimeKind lost by providers like SQLite so
+        // they serialize with the trailing 'Z' the RealWorld spec relies on
+        modelBuilder.Entity<Article>(b =>
+        {
+            b.Property(x => x.CreatedAt)
+                .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+            b.Property(x => x.UpdatedAt)
+                .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+        });
+
+        modelBuilder.Entity<Comment>(b =>
+        {
+            b.Property(x => x.CreatedAt)
+                .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+            b.Property(x => x.UpdatedAt)
+                .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+        });
+
         modelBuilder.Entity<ArticleTag>(b =>
         {
             b.HasKey(t => new { t.ArticleId, t.TagId });

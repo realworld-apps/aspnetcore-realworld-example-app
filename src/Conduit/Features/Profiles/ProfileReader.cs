@@ -26,9 +26,10 @@ public class ProfileReader(
             .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
         if (person is null)
         {
-            throw new RestException(HttpStatusCode.NotFound, new { User = Constants.NOT_FOUND });
+            throw new RestException(HttpStatusCode.NotFound, "profile", Constants.NOT_FOUND);
         }
-        var profile = mapper.PersonToProfile(person);
+
+        var profile = mapper.Map<Domain.Person, Profile>(person);
 
         if (currentUserName != null)
         {
@@ -39,10 +40,7 @@ public class ProfileReader(
 
             if (currentPerson is null)
             {
-                throw new RestException(
-                    HttpStatusCode.NotFound,
-                    new { User = Constants.NOT_FOUND }
-                );
+                throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
             }
 
             if (currentPerson.Followers.Any(x => x.TargetId == person.PersonId))
