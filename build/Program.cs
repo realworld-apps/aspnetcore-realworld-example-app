@@ -43,7 +43,7 @@ Target(
     }
 );
 
-Target(Build, [Format], () => Run("dotnet", "build Conduit.sln -c Release"));
+Target(Build, [Format], () => Run("dotnet", "build Conduit.slnx -c Release"));
 
 Target(
     Test,
