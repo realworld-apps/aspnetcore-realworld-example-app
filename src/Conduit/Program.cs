@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 // read database configuration (database provider + database connection) from environment variables
 //Environment.GetEnvironmentVariable(DEFAULT_DATABASE_PROVIDER)
@@ -63,22 +63,10 @@ builder.Services.AddSwaggerGen(x =>
 
     x.SupportNonNullableReferenceTypes();
 
-    x.AddSecurityRequirement(
-        new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer",
-                    },
-                },
-                Array.Empty<string>()
-            },
-        }
-    );
+    x.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>(),
+    });
     x.SwaggerDoc("v1", new OpenApiInfo { Title = "RealWorld API", Version = "v1" });
     x.CustomSchemaIds(y => y.FullName);
     x.DocInclusionPredicate((_, _) => true);

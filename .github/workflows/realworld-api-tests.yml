@@ -14,12 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
-    - uses: actions/setup-dotnet@v5
+    - uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.201
+        dotnet-version: 10.0.302
     - name: Install Hurl
       run: |
         curl -sSL https://github.com/Orange-OpenSource/hurl/releases/download/8.0.1/hurl-8.0.1-x86_64-unknown-linux-gnu.tar.gz | tar xz -C "$RUNNER_TEMP"
@@ -32,12 +32,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
-    - uses: actions/setup-dotnet@v5
+    - uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.201
+        dotnet-version: 10.0.302
     - uses: oven-sh/setup-bun@v2
     - name: Run Bruno tests
       run: make test-bruno-with-managed-server
@@ -50,14 +50,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: true
     - name: Update spec to upstream HEAD
       run: git submodule update --remote realworld
-    - uses: actions/setup-dotnet@v5
+    - uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.201
+        dotnet-version: 10.0.302
     - name: Install Hurl
       run: |
         curl -sSL https://github.com/Orange-OpenSource/hurl/releases/download/8.0.1/hurl-8.0.1-x86_64-unknown-linux-gnu.tar.gz | tar xz -C "$RUNNER_TEMP"
