@@ -129,9 +129,9 @@ public class Edit
             CancellationToken cancellationToken
         )
         {
-            var currentUsername = currentUserAccessor.GetCurrentUsername();
+            var currentPersonId = currentUserAccessor.GetCurrentPersonId();
             var person = await context
-                .Persons.Where(x => x.Username == currentUsername)
+                .Persons.Where(x => x.PersonId == currentPersonId)
                 .FirstOrDefaultAsync(cancellationToken);
             if (person is null)
             {
@@ -187,9 +187,7 @@ public class Edit
             await context.SaveChangesAsync(cancellationToken);
 
             var user = mapper.PersonToUser(person);
-            user.Token = jwtTokenGenerator.CreateToken(
-                person.Username ?? throw new InvalidOperationException()
-            );
+            user.Token = jwtTokenGenerator.CreateToken(person.PersonId);
             return new UserEnvelope(user);
         }
     }

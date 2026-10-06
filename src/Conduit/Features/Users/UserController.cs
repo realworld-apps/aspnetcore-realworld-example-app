@@ -15,7 +15,7 @@ public class UserController(IMediator mediator, ICurrentUserAccessor currentUser
     [HttpGet]
     public ValueTask<UserEnvelope> GetCurrent(CancellationToken cancellationToken) =>
         mediator.Send(
-            new Details.Query(currentUserAccessor.GetCurrentUsername() ?? "<unknown>"),
+            new Details.Query(currentUserAccessor.GetCurrentPersonId() ?? 0),
             cancellationToken
         );
 

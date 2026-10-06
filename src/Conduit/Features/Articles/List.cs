@@ -30,14 +30,14 @@ public class List
         {
             var queryable = context.Articles.GetAllData();
 
-            if (message.IsFeed && currentUserAccessor.GetCurrentUsername() != null)
+            if (message.IsFeed && currentUserAccessor.GetCurrentPersonId() != null)
             {
                 // note: Person.Followers holds the FollowedPeople rows where this person is the
                 // observer, i.e. the people this person follows
                 var currentUser = await context
                     .Persons.Include(x => x.Followers)
                     .FirstOrDefaultAsync(
-                        x => x.Username == currentUserAccessor.GetCurrentUsername(),
+                        x => x.PersonId == currentUserAccessor.GetCurrentPersonId(),
                         cancellationToken
                     );
 
@@ -117,11 +117,11 @@ public class List
             }
 
             // populate author.following for the current user
-            var currentUsername = currentUserAccessor.GetCurrentUsername();
-            if (currentUsername != null)
+            var currentPersonId = currentUserAccessor.GetCurrentPersonId();
+            if (currentPersonId != null)
             {
                 var followedIds = await context
-                    .FollowedPeople.Where(x => x.Observer!.Username == currentUsername)
+                    .FollowedPeople.Where(x => x.ObserverId == currentPersonId)
                     .Select(x => x.TargetId)
                     .ToListAsync(cancellationToken);
                 foreach (var author in articles.Select(x => x.Author))
@@ -130,7 +130,7 @@ public class List
                 }
             }
 
-            await articles.PopulateFavoritedAsync(context, currentUsername, cancellationToken);
+            articles.PopulateFavorited(currentPersonId);
             return new ArticlesEnvelope { Articles = articles, ArticlesCount = queryable.Count() };
         }
     }

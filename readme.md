@@ -53,6 +53,30 @@ See [`AGENTS.md`](AGENTS.md) for repository layout, development conventions, and
 
 ## Docker Build
 
+Before starting the API locally or with Docker, generate a signing key:
+
+```sh
+export Jwt__SigningKey="$(openssl rand -base64 32)"
+```
+
+Each deployment must use its own cryptographically random key (at least 32 bytes,
+base64-encoded), provided through protected configuration such as a secret manager
+or the `Jwt__SigningKey` environment variable. Never commit it or bake it into an
+image. Startup fails for missing, malformed, short, or obvious placeholder keys.
+Issuer and audience are identifiers, not secrets.
+
+Only version-2 tokens with `conduit_token_version: "2"` and a stable `user:<id>`
+subject are accepted. Legacy username-subject and unversioned tokens are rejected,
+even when their subject resembles a new user ID. There is no compatibility fallback.
+All existing sessions must sign in again after this upgrade. New sessions survive
+username changes; authentication rejects tokens belonging to deleted users.
+
+Keep the key stable across restarts and shared only among instances of the same
+deployment. To rotate a compromised key, replace it on every instance and restart;
+all previously issued tokens become invalid and users must sign in again. Deployments
+using the former public default key should rotate immediately. Managed API test
+targets generate a fresh ephemeral key when one is not supplied.
+
 There is a `Makefile` for macOS and Linux:
 
 - `make build` executes `docker compose build`
