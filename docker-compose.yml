@@ -2,6 +2,7 @@ services:
   conduit:
     build: .
     environment:
+     - Jwt__SigningKey=${Jwt__SigningKey:?Generate and export a unique JWT signing key first}
      - ASPNETCORE_Conduit_DatabaseProvider=${ASPNETCORE_Conduit_DatabaseProvider}
      - ASPNETCORE_Conduit_ConnectionString=${ASPNETCORE_Conduit_ConnectionString}
     ports:

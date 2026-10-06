@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Conduit.Features.Profiles;
 using Conduit.Infrastructure;
@@ -7,6 +9,7 @@ using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -41,13 +44,32 @@ public static class ServicesExtensions
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
     }
 
-    public static void AddJwt(this IServiceCollection services)
+    public static void AddJwt(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions();
 
-        var signingKey = new SymmetricSecurityKey(
-            "somethinglongerforthisdumbalgorithmisrequired"u8.ToArray()
-        );
+        byte[] key;
+        try
+        {
+            key = Convert.FromBase64String(configuration["Jwt:SigningKey"] ?? "");
+        }
+        catch (FormatException)
+        {
+            throw new InvalidOperationException(
+                "Jwt:SigningKey must be a base64-encoded random key of at least 32 bytes."
+            );
+        }
+        if (
+            key.Length < 32
+            || key.Distinct().Count() < 16
+            || Encoding.UTF8.GetString(key) == "somethinglongerforthisdumbalgorithmisrequired"
+        )
+        {
+            throw new InvalidOperationException(
+                "Jwt:SigningKey must be a base64-encoded random key of at least 32 bytes; default and placeholder keys are not allowed."
+            );
+        }
+        var signingKey = new SymmetricSecurityKey(key);
         var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
         var issuer = "issuer";
         var audience = "audience";

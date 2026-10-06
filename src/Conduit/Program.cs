@@ -98,7 +98,7 @@ builder
 
 builder.Services.AddConduit();
 
-builder.Services.AddJwt();
+builder.Services.AddJwt(builder.Configuration);
 
 var app = builder.Build();
 
