@@ -26,7 +26,7 @@ public class Article
     public List<Comment> Comments { get; init; } = new();
 
     [NotMapped]
-    public bool Favorited => ArticleFavorites.Count != 0;
+    public bool Favorited { get; set; }
 
     [NotMapped]
     public int FavoritesCount => ArticleFavorites?.Count ?? 0;

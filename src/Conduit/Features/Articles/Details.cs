@@ -18,7 +18,8 @@ public class Details
         public QueryValidator() => RuleFor(x => x.Slug).NotNull().NotEmpty();
     }
 
-    public class QueryHandler(ConduitContext context) : IRequestHandler<Query, ArticleEnvelope>
+    public class QueryHandler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
+        : IRequestHandler<Query, ArticleEnvelope>
     {
         public async ValueTask<ArticleEnvelope> Handle(
             Query message,
@@ -33,6 +34,11 @@ public class Details
             {
                 throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
+            await new[] { article }.PopulateFavoritedAsync(
+                context,
+                currentUserAccessor.GetCurrentUsername(),
+                cancellationToken
+            );
             return new ArticleEnvelope(article);
         }
     }
