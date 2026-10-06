@@ -124,10 +124,16 @@ public class Edit
                 article.UpdatedAt = DateTime.UtcNow;
             }
 
-            // ensure context is tracking any tags that are about to be created so that it won't attempt to insert a duplicate
-            context.Tags.AttachRange([
-                .. articleTagsToCreate.Where(x => x.Tag is not null).Select(a => a.Tag!),
-            ]);
+            // Reuse existing tags, but insert missing rows before their article links.
+            foreach (var articleTag in articleTagsToCreate)
+            {
+                var tag = await context.Tags.FindAsync([articleTag.TagId], cancellationToken);
+                if (tag is null)
+                {
+                    tag = new Tag { TagId = articleTag.TagId };
+                    await context.Tags.AddAsync(tag, cancellationToken);
+                }
+            }
 
             // add the new article tags
             await context.ArticleTags.AddRangeAsync(articleTagsToCreate, cancellationToken);
@@ -167,7 +173,6 @@ public class Edit
                     {
                         Article = article,
                         ArticleId = article.ArticleId,
-                        Tag = new Tag { TagId = tag },
                         TagId = tag,
                     };
                     articleTagsToCreate.Add(at);
