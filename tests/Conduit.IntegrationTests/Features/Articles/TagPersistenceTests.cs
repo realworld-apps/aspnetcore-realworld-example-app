@@ -27,18 +27,24 @@ public class TagPersistenceTests
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
-        context.AddRange(article, new Tag { TagId = "existing" });
+        context.AddRange(
+            article,
+            new Tag { TagId = "existing" },
+            new ArticleTag { Article = article, TagId = "existing" }
+        );
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
         var handler = new Edit.Handler(context, new StubCurrentUserAccessor("author"));
         var result = await handler.Handle(
             new Edit.Command(
-                new(new Edit.ArticleData { TagList = ["existing", "new"] }),
+                new(new Edit.ArticleData { TagList = ["existing", "existing", "new", "new"] }),
                 "article"
             ),
             default
         );
         Assert.Equal(2, result.Article.TagList.Count);
+        Assert.Contains("existing", result.Article.TagList);
+        Assert.Contains("new", result.Article.TagList);
         context.ChangeTracker.Clear();
         Assert.Equal(2, await context.Tags.CountAsync());
         Assert.Equal(2, await context.ArticleTags.CountAsync());
