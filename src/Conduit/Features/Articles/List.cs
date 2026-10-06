@@ -130,6 +130,7 @@ public class List
                 }
             }
 
+            await articles.PopulateFavoritedAsync(context, currentUsername, cancellationToken);
             return new ArticlesEnvelope { Articles = articles, ArticlesCount = queryable.Count() };
         }
     }
