@@ -107,9 +107,13 @@ public class Edit
             }
 
             // when tagList is absent from the request the current tags are preserved
-            var articleTagList = message.Model.Article.TagListSet
-                ? (message.Model.Article.TagList ?? [])
-                : article.ArticleTags.Where(x => x.TagId is not null).Select(x => x.TagId!);
+            var articleTagList = (
+                message.Model.Article.TagListSet
+                    ? (message.Model.Article.TagList ?? [])
+                    : article.ArticleTags.Where(x => x.TagId is not null).Select(x => x.TagId!)
+            )
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
 
             var articleTagsToCreate = GetArticleTagsToCreate(article, articleTagList);
             var articleTagsToDelete = GetArticleTagsToDelete(article, articleTagList);
