@@ -22,7 +22,10 @@ public class SigningKeyTests
     [InlineData("not base64")]
     [InlineData("c2hvcnQ=")]
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")]
+    [InlineData("MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")]
     [InlineData("c29tZXRoaW5nbG9uZ2VyZm9ydGhpc2R1bWJhbGdvcml0aG1pc3JlcXVpcmVk")]
+    [InlineData("c29tZXRoaW5nbG9uZ2VyZm9ydGhpc2R1bWJhbGdvcml0aG1pc3JlcXVpcmVkMQ==")]
+    [InlineData("MXNvbWV0aGluZ2xvbmdlcmZvcnRoaXNkdW1iYWxnb3JpdGhtaXNyZXF1aXJlZA==")]
     public void Invalid_Keys_Are_Rejected(string? key)
     {
         Assert.Throws<InvalidOperationException>(() =>
