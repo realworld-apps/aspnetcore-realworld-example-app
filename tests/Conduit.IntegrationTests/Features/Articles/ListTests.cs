@@ -61,7 +61,7 @@ public class ListTests : SliceFixture
     {
         var user = await Users.UserHelpers.CreateDefaultUser(this);
         var dbContext = GetDbContext();
-        var currentAccessor = new StubCurrentUserAccessor(user.Username!);
+        var currentAccessor = new StubCurrentUserAccessor(user.Username);
         var handler = new Create.Handler(dbContext, currentAccessor);
         for (var i = 0; i < 3; i++)
         {
@@ -89,7 +89,7 @@ public class ListTests : SliceFixture
     {
         var user = await Users.UserHelpers.CreateDefaultUser(this);
         var dbContext = GetDbContext();
-        var currentAccessor = new StubCurrentUserAccessor(user.Username!);
+        var currentAccessor = new StubCurrentUserAccessor(user.Username);
         var handler = new List.QueryHandler(dbContext, currentAccessor);
 
         var result = await handler.Handle(
