@@ -63,6 +63,7 @@ public class SigningKeyTests
 
         var other = new ServiceCollection();
         other.AddLogging();
+        other.AddSingleton(db);
         other.AddJwt(Configuration(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))));
         await using var validator = other.BuildServiceProvider();
         var invalidHttp = new DefaultHttpContext { RequestServices = validator };
@@ -70,7 +71,16 @@ public class SigningKeyTests
             new JwtSecurityToken(
                 "issuer",
                 "audience",
-                [new Claim("sub", "user")],
+                [
+                    new Claim(
+                        "sub",
+                        "user:"
+                            + person.PersonId.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture
+                            )
+                    ),
+                    new Claim("conduit_token_version", "2"),
+                ],
                 DateTime.UtcNow,
                 DateTime.UtcNow.AddMinutes(5),
                 new SigningCredentials(
