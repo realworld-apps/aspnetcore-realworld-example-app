@@ -1,5 +1,7 @@
 using System;
+using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Conduit.Features.Profiles;
@@ -9,6 +11,7 @@ using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -88,6 +91,9 @@ public static class ServicesExtensions
         {
             // The signing key must match!
             ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            RequireSignedTokens = true,
+            RequireExpirationTime = true,
             IssuerSigningKey = signingCredentials.Key,
             // Validate the JWT Issuer (iss) claim
             ValidateIssuer = true,
@@ -106,8 +112,48 @@ public static class ServicesExtensions
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = tokenValidationParameters;
+                options.MapInboundClaims = false;
                 options.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = async context =>
+                    {
+                        var identity = context.Principal?.Identity as ClaimsIdentity;
+                        var subject = identity?.FindFirst("sub");
+                        if (
+                            subject is null
+                            || identity!.FindAll("sub").Count() != 1
+                            || identity.FindAll("conduit_token_version").Count() != 1
+                            || identity.FindFirst("conduit_token_version")?.Value != "2"
+                            || !subject.Value.StartsWith("user:", StringComparison.Ordinal)
+                            || !int.TryParse(
+                                subject.Value[5..],
+                                NumberStyles.None,
+                                CultureInfo.InvariantCulture,
+                                out var personId
+                            )
+                            || personId <= 0
+                        )
+                        {
+                            context.Fail("Invalid user identity");
+                            return;
+                        }
+                        var db =
+                            context.HttpContext.RequestServices.GetRequiredService<ConduitContext>();
+                        var username = await db
+                            .Persons.Where(x => x.PersonId == personId)
+                            .Select(x => x.Username)
+                            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+                        if (username is null)
+                        {
+                            context.Fail("User no longer exists");
+                            return;
+                        }
+                        foreach (var claim in identity.FindAll(ClaimTypes.Name).ToArray())
+                        {
+                            identity.RemoveClaim(claim);
+                        }
+                        identity.AddClaim(new Claim(ClaimTypes.Name, username));
+                    },
                     OnMessageReceived = (context) =>
                     {
                         var token = context.HttpContext.Request.Headers.Authorization.ToString();
