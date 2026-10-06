@@ -35,7 +35,7 @@ public class Delete
                 ?? throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
 
             var person = await context.Persons.FirstOrDefaultAsync(
-                x => x.Username == currentUserAccessor.GetCurrentUsername(),
+                x => x.PersonId == currentUserAccessor.GetCurrentPersonId(),
                 cancellationToken
             );
             if (person is null)
@@ -62,11 +62,7 @@ public class Delete
                 throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
-            await new[] { article }.PopulateFavoritedAsync(
-                context,
-                currentUserAccessor.GetCurrentUsername(),
-                cancellationToken
-            );
+            new[] { article }.PopulateFavorited(currentUserAccessor.GetCurrentPersonId());
             return new ArticleEnvelope(article);
         }
     }

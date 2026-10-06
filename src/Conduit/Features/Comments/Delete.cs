@@ -35,7 +35,7 @@ public class Delete
                 article.Comments.FirstOrDefault(x => x.CommentId == message.Id)
                 ?? throw new RestException(HttpStatusCode.NotFound, "comment", Constants.NOT_FOUND);
 
-            if (comment.Author?.Username != currentUserAccessor.GetCurrentUsername())
+            if (comment.Author?.PersonId != currentUserAccessor.GetCurrentPersonId())
             {
                 throw new RestException(HttpStatusCode.Forbidden, "comment", Constants.FORBIDDEN);
             }

@@ -7,6 +7,7 @@ using Conduit.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -20,7 +21,18 @@ public class TokenIdentityTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddConduit();
-        services.AddJwt();
+        services.AddJwt(
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                .AddInMemoryCollection(
+                    new System.Collections.Generic.Dictionary<string, string?>
+                    {
+                        ["Jwt:SigningKey"] = Convert.ToBase64String(
+                            System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)
+                        ),
+                    }
+                )
+                .Build()
+        );
         services.AddDbContext<ConduitContext>(o =>
             o.UseInMemoryDatabase(Guid.NewGuid().ToString())
         );
@@ -40,7 +52,24 @@ public class TokenIdentityTests
         http.Request.Headers.Authorization = "Token " + token;
         var result = await http.AuthenticateAsync();
         Assert.True(result.Succeeded);
-        Assert.Equal("after", result.Principal.FindFirstValue(ClaimTypes.NameIdentifier));
+        Assert.Equal("user:" + person.PersonId, result.Principal.FindFirstValue("sub"));
+        http.User = result.Principal;
+        scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext = http;
+        var accessor = scope.ServiceProvider.GetRequiredService<ICurrentUserAccessor>();
+        Assert.Equal(person.PersonId, accessor.GetCurrentPersonId());
+        var article = await new Conduit.Features.Articles.Create.Handler(db, accessor).Handle(
+            new Conduit.Features.Articles.Create.Command(
+                new Conduit.Features.Articles.Create.ArticleData
+                {
+                    Title = "After rename",
+                    Description = "d",
+                    Body = "b",
+                }
+            ),
+            default
+        );
+        Assert.Equal("after", article.Article.Author?.Username);
+        Assert.Equal(person.PersonId, article.Article.Author?.PersonId);
         db.Remove(person);
         await db.SaveChangesAsync();
         await using var deletedScope = provider.CreateAsyncScope();

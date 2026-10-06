@@ -129,9 +129,9 @@ public class Edit
             CancellationToken cancellationToken
         )
         {
-            var currentUsername = currentUserAccessor.GetCurrentUsername();
+            var currentPersonId = currentUserAccessor.GetCurrentPersonId();
             var person = await context
-                .Persons.Where(x => x.Username == currentUsername)
+                .Persons.Where(x => x.PersonId == currentPersonId)
                 .FirstOrDefaultAsync(cancellationToken);
             if (person is null)
             {

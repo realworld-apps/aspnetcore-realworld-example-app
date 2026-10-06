@@ -139,20 +139,16 @@ public static class ServicesExtensions
                         }
                         var db =
                             context.HttpContext.RequestServices.GetRequiredService<ConduitContext>();
-                        var username = await db
-                            .Persons.Where(x => x.PersonId == personId)
-                            .Select(x => x.Username)
-                            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
-                        if (username is null)
+                        if (
+                            !await db.Persons.AnyAsync(
+                                x => x.PersonId == personId,
+                                context.HttpContext.RequestAborted
+                            )
+                        )
                         {
                             context.Fail("User no longer exists");
                             return;
                         }
-                        foreach (var claim in identity.FindAll(ClaimTypes.Name).ToArray())
-                        {
-                            identity.RemoveClaim(claim);
-                        }
-                        identity.AddClaim(new Claim(ClaimTypes.Name, username));
                     },
                     OnMessageReceived = (context) =>
                     {

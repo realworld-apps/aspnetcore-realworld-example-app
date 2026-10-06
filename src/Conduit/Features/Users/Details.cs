@@ -13,11 +13,11 @@ namespace Conduit.Features.Users;
 
 public class Details
 {
-    public record Query(string Username) : IRequest<UserEnvelope>;
+    public record Query(int PersonId) : IRequest<UserEnvelope>;
 
     public class QueryValidator : AbstractValidator<Query>
     {
-        public QueryValidator() => RuleFor(x => x.Username).NotNull().NotEmpty();
+        public QueryValidator() => RuleFor(x => x.PersonId).GreaterThan(0);
     }
 
     public class QueryHandler(
@@ -33,7 +33,7 @@ public class Details
         {
             var person = await context
                 .Persons.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Username == message.Username, cancellationToken);
+                .FirstOrDefaultAsync(x => x.PersonId == message.PersonId, cancellationToken);
 
             if (person == null)
             {

@@ -65,6 +65,12 @@ or the `Jwt__SigningKey` environment variable. Never commit it or bake it into a
 image. Startup fails for missing, malformed, short, or obvious placeholder keys.
 Issuer and audience are identifiers, not secrets.
 
+Only version-2 tokens with `conduit_token_version: "2"` and a stable `user:<id>`
+subject are accepted. Legacy username-subject and unversioned tokens are rejected,
+even when their subject resembles a new user ID. There is no compatibility fallback.
+All existing sessions must sign in again after this upgrade. New sessions survive
+username changes; authentication rejects tokens belonging to deleted users.
+
 Keep the key stable across restarts and shared only among instances of the same
 deployment. To rotate a compromised key, replace it on every instance and restart;
 all previously issued tokens become invalid and users must sign in again. Deployments

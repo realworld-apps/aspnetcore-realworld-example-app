@@ -4,9 +4,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Conduit.Domain;
+using Conduit.Infrastructure;
 using Conduit.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -41,12 +44,19 @@ public class SigningKeyTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddConduit();
+        services.AddDbContext<ConduitContext>(o =>
+            o.UseInMemoryDatabase(Guid.NewGuid().ToString())
+        );
         services.AddJwt(Configuration(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))));
         await using var issuer = services.BuildServiceProvider();
         await using var scope = issuer.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ConduitContext>();
+        var person = new Person { Username = "user" };
+        db.Add(person);
+        await db.SaveChangesAsync();
         var token = scope
             .ServiceProvider.GetRequiredService<IJwtTokenGenerator>()
-            .CreateToken("user");
+            .CreateToken(person.PersonId);
         var http = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
         http.Request.Headers.Authorization = "Token " + token;
         Assert.True((await http.AuthenticateAsync()).Succeeded);

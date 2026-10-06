@@ -76,7 +76,7 @@ public class Edit
                 throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
-            if (article.Author?.Username != currentUserAccessor.GetCurrentUsername())
+            if (article.Author?.PersonId != currentUserAccessor.GetCurrentPersonId())
             {
                 throw new RestException(HttpStatusCode.Forbidden, "article", Constants.FORBIDDEN);
             }
@@ -155,11 +155,7 @@ public class Edit
                 throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
-            await new[] { article }.PopulateFavoritedAsync(
-                context,
-                currentUserAccessor.GetCurrentUsername(),
-                cancellationToken
-            );
+            new[] { article }.PopulateFavorited(currentUserAccessor.GetCurrentPersonId());
             return new ArticleEnvelope(article);
         }
 

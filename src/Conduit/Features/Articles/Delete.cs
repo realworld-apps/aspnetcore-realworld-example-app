@@ -29,7 +29,7 @@ public class Delete
                     .FirstOrDefaultAsync(x => x.Slug == message.Slug, cancellationToken)
                 ?? throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
 
-            if (article.Author?.Username != currentUserAccessor.GetCurrentUsername())
+            if (article.Author?.PersonId != currentUserAccessor.GetCurrentPersonId())
             {
                 throw new RestException(HttpStatusCode.Forbidden, "article", Constants.FORBIDDEN);
             }

@@ -12,8 +12,10 @@ public class JwtTokenGenerator(IOptions<JwtIssuerOptions> jwtOptions) : IJwtToke
 
     public string CreateToken(int personId)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(personId);
         var claims = new[]
         {
+            new Claim("conduit_token_version", "2"),
             new Claim(
                 JwtRegisteredClaimNames.Sub,
                 "user:" + personId.ToString(CultureInfo.InvariantCulture)
