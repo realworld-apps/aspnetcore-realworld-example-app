@@ -30,7 +30,7 @@ test-bruno-with-managed-server:
 # starts the API on a fresh database, waits for it, runs $(1), then shuts the API down
 define run_with_managed_server
 	rm -f src/Conduit/realworld.db; \
-	ASPNETCORE_URLS=$(API_URL) dotnet run --project $(PROJECT) & \
+	Jwt__SigningKey=$${Jwt__SigningKey:-$$(openssl rand -base64 32)} ASPNETCORE_URLS=$(API_URL) dotnet run --project $(PROJECT) & \
 	SERVER_PID=$$!; \
 	timeout 120 bash -c 'until curl -s $(API_URL)/api/tags > /dev/null; do sleep 0.5; done'; \
 	HOST=$(API_URL) $(1); \
