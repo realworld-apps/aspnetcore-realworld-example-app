@@ -4,5 +4,5 @@ namespace Conduit.IntegrationTests;
 
 public class StubJwtTokenGenerator : IJwtTokenGenerator
 {
-    public string CreateToken(string username) => "stub-token";
+    public string CreateToken(int personId) => "stub-token";
 }

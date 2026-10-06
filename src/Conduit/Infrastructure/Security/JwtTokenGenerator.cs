@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
@@ -9,11 +10,16 @@ public class JwtTokenGenerator(IOptions<JwtIssuerOptions> jwtOptions) : IJwtToke
 {
     private readonly JwtIssuerOptions _jwtOptions = jwtOptions.Value;
 
-    public string CreateToken(string username)
+    public string CreateToken(int personId)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(personId);
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, username),
+            new Claim("conduit_token_version", "2"),
+            new Claim(
+                JwtRegisteredClaimNames.Sub,
+                "user:" + personId.ToString(CultureInfo.InvariantCulture)
+            ),
             new Claim(JwtRegisteredClaimNames.Jti, _jwtOptions.JtiGenerator()),
             new Claim(
                 JwtRegisteredClaimNames.Iat,

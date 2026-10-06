@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Conduit.Features;
@@ -14,7 +15,10 @@ public class EditTests : SliceFixture
         new(
             GetDbContext(),
             new PasswordHasher(),
-            new StubCurrentUserAccessor(currentUser),
+            new StubCurrentUserAccessor(
+                currentUser,
+                GetDbContext().Persons.Single(x => x.Username == currentUser).PersonId
+            ),
             new StubJwtTokenGenerator(),
             new ConduitMapper()
         );

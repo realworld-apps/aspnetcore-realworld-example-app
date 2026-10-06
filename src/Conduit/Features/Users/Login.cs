@@ -64,9 +64,7 @@ public class Login
             }
 
             var user = mapper.PersonToUser(person);
-            user.Token = jwtTokenGenerator.CreateToken(
-                person.Username ?? throw new InvalidOperationException()
-            );
+            user.Token = jwtTokenGenerator.CreateToken(person.PersonId);
             return new UserEnvelope(user);
         }
     }

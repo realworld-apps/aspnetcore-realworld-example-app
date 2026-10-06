@@ -42,7 +42,7 @@ public class Add
             }
 
             var observer = await context.Persons.FirstOrDefaultAsync(
-                x => x.Username == currentUserAccessor.GetCurrentUsername(),
+                x => x.PersonId == currentUserAccessor.GetCurrentPersonId(),
                 cancellationToken
             );
 

@@ -1,4 +1,8 @@
 using System;
+using System.Globalization;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Conduit.Features.Profiles;
 using Conduit.Infrastructure;
@@ -7,6 +11,8 @@ using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -41,13 +47,35 @@ public static class ServicesExtensions
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
     }
 
-    public static void AddJwt(this IServiceCollection services)
+    public static void AddJwt(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions();
 
-        var signingKey = new SymmetricSecurityKey(
-            "somethinglongerforthisdumbalgorithmisrequired"u8.ToArray()
-        );
+        byte[] key;
+        try
+        {
+            key = Convert.FromBase64String(configuration["Jwt:SigningKey"] ?? "");
+        }
+        catch (FormatException)
+        {
+            throw new InvalidOperationException(
+                "Jwt:SigningKey must be a base64-encoded random key of at least 32 bytes."
+            );
+        }
+        if (
+            key.Length < 32
+            || key.Distinct().Count() < 16
+            || Encoding
+                .UTF8.GetString(key)
+                .Contains("somethinglongerforthisdumbalgorithmisrequired", StringComparison.Ordinal)
+            || HasRepeatedPattern(key)
+        )
+        {
+            throw new InvalidOperationException(
+                "Jwt:SigningKey must be a base64-encoded random key of at least 32 bytes; default and placeholder keys are not allowed."
+            );
+        }
+        var signingKey = new SymmetricSecurityKey(key);
         var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
         var issuer = "issuer";
         var audience = "audience";
@@ -63,6 +91,9 @@ public static class ServicesExtensions
         {
             // The signing key must match!
             ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            RequireSignedTokens = true,
+            RequireExpirationTime = true,
             IssuerSigningKey = signingCredentials.Key,
             // Validate the JWT Issuer (iss) claim
             ValidateIssuer = true,
@@ -81,8 +112,44 @@ public static class ServicesExtensions
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = tokenValidationParameters;
+                options.MapInboundClaims = false;
                 options.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = async context =>
+                    {
+                        var identity = context.Principal?.Identity as ClaimsIdentity;
+                        var subject = identity?.FindFirst("sub");
+                        if (
+                            subject is null
+                            || identity!.FindAll("sub").Count() != 1
+                            || identity.FindAll("conduit_token_version").Count() != 1
+                            || identity.FindFirst("conduit_token_version")?.Value != "2"
+                            || !subject.Value.StartsWith("user:", StringComparison.Ordinal)
+                            || !int.TryParse(
+                                subject.Value[5..],
+                                NumberStyles.None,
+                                CultureInfo.InvariantCulture,
+                                out var personId
+                            )
+                            || personId <= 0
+                        )
+                        {
+                            context.Fail("Invalid user identity");
+                            return;
+                        }
+                        var db =
+                            context.HttpContext.RequestServices.GetRequiredService<ConduitContext>();
+                        if (
+                            !await db.Persons.AnyAsync(
+                                x => x.PersonId == personId,
+                                context.HttpContext.RequestAborted
+                            )
+                        )
+                        {
+                            context.Fail("User no longer exists");
+                            return;
+                        }
+                    },
                     OnMessageReceived = (context) =>
                     {
                         var token = context.HttpContext.Request.Headers.Authorization.ToString();
@@ -105,6 +172,31 @@ public static class ServicesExtensions
                     },
                 };
             });
+    }
+
+    private static bool HasRepeatedPattern(byte[] key)
+    {
+        for (var period = 1; period <= key.Length / 2; period++)
+        {
+            var isRepeated = true;
+            for (var index = period; index < key.Length; index++)
+            {
+                if (key[index] == key[index % period])
+                {
+                    continue;
+                }
+
+                isRepeated = false;
+                break;
+            }
+
+            if (isRepeated)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static void AddSerilogLogging(this ILoggerFactory loggerFactory)

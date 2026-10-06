@@ -2,7 +2,7 @@ using Conduit.Infrastructure;
 
 namespace Conduit.IntegrationTests;
 
-public class StubCurrentUserAccessor(string? userName) : ICurrentUserAccessor
+public class StubCurrentUserAccessor(string? userName, int personId = 1) : ICurrentUserAccessor
 {
-    public string? GetCurrentUsername() => userName;
+    public int? GetCurrentPersonId() => userName is null ? null : personId;
 }

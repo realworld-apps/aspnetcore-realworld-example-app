@@ -52,7 +52,7 @@ public class Create
         )
         {
             var author = await context.Persons.FirstAsync(
-                x => x.Username == currentUserAccessor.GetCurrentUsername(),
+                x => x.PersonId == currentUserAccessor.GetCurrentPersonId(),
                 cancellationToken
             );
             var tags = new List<Tag>();

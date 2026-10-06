@@ -21,7 +21,12 @@ public class FavoritedTests : SliceFixture
         db.AddRange(article, fan, new Person { Username = "bystander" });
         db.Add(new ArticleFavorite { Article = article, Person = fan });
         await db.SaveChangesAsync();
-        var accessor = new StubCurrentUserAccessor(username);
+        var accessor = new StubCurrentUserAccessor(
+            username,
+            username == "fan" ? fan.PersonId
+                : username == "author" ? author.PersonId
+                : 3
+        );
         var details = await new Details.QueryHandler(db, accessor).Handle(
             new Details.Query("article"),
             default

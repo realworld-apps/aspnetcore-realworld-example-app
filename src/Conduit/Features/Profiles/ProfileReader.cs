@@ -19,7 +19,7 @@ public class ProfileReader(
         CancellationToken cancellationToken
     )
     {
-        var currentUserName = currentUserAccessor.GetCurrentUsername();
+        var currentPersonId = currentUserAccessor.GetCurrentPersonId();
 
         var person = await context
             .Persons.AsNoTracking()
@@ -31,12 +31,12 @@ public class ProfileReader(
 
         var profile = mapper.PersonToProfile(person);
 
-        if (currentUserName != null)
+        if (currentPersonId != null)
         {
             var currentPerson = await context
                 .Persons.Include(x => x.Following)
                 .Include(x => x.Followers)
-                .FirstOrDefaultAsync(x => x.Username == currentUserName, cancellationToken);
+                .FirstOrDefaultAsync(x => x.PersonId == currentPersonId, cancellationToken);
 
             if (currentPerson is null)
             {
