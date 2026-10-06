@@ -124,16 +124,19 @@ public class Edit
                 article.UpdatedAt = DateTime.UtcNow;
             }
 
-            // Reuse existing tags, but insert missing rows before their article links.
-            foreach (var articleTag in articleTagsToCreate)
-            {
-                var tag = await context.Tags.FindAsync([articleTag.TagId], cancellationToken);
-                if (tag is null)
-                {
-                    tag = new Tag { TagId = articleTag.TagId };
-                    await context.Tags.AddAsync(tag, cancellationToken);
-                }
-            }
+            var tagIds = articleTagsToCreate
+                .Select(x => x.TagId)
+                .OfType<string>()
+                .Distinct()
+                .ToArray();
+            var existingTagIds = await context
+                .Tags.Where(x => x.TagId != null && tagIds.Contains(x.TagId))
+                .Select(x => x.TagId!)
+                .ToHashSetAsync(cancellationToken);
+            await context.Tags.AddRangeAsync(
+                tagIds.Where(x => !existingTagIds.Contains(x)).Select(x => new Tag { TagId = x }),
+                cancellationToken
+            );
 
             // add the new article tags
             await context.ArticleTags.AddRangeAsync(articleTagsToCreate, cancellationToken);
