@@ -62,7 +62,10 @@ public static class ServicesExtensions
         if (
             key.Length < 32
             || key.Distinct().Count() < 16
-            || Encoding.UTF8.GetString(key) == "somethinglongerforthisdumbalgorithmisrequired"
+            || Encoding
+                .UTF8.GetString(key)
+                .Contains("somethinglongerforthisdumbalgorithmisrequired", StringComparison.Ordinal)
+            || HasRepeatedPattern(key)
         )
         {
             throw new InvalidOperationException(
@@ -127,6 +130,31 @@ public static class ServicesExtensions
                     },
                 };
             });
+    }
+
+    private static bool HasRepeatedPattern(byte[] key)
+    {
+        for (var period = 1; period <= key.Length / 2; period++)
+        {
+            var isRepeated = true;
+            for (var index = period; index < key.Length; index++)
+            {
+                if (key[index] == key[index % period])
+                {
+                    continue;
+                }
+
+                isRepeated = false;
+                break;
+            }
+
+            if (isRepeated)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static void AddSerilogLogging(this ILoggerFactory loggerFactory)
