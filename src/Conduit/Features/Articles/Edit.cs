@@ -124,10 +124,19 @@ public class Edit
                 article.UpdatedAt = DateTime.UtcNow;
             }
 
-            // ensure context is tracking any tags that are about to be created so that it won't attempt to insert a duplicate
-            context.Tags.AttachRange([
-                .. articleTagsToCreate.Where(x => x.Tag is not null).Select(a => a.Tag!),
-            ]);
+            var tagIds = articleTagsToCreate
+                .Select(x => x.TagId)
+                .OfType<string>()
+                .Distinct()
+                .ToArray();
+            var existingTagIds = await context
+                .Tags.Where(x => x.TagId != null && tagIds.Contains(x.TagId))
+                .Select(x => x.TagId!)
+                .ToHashSetAsync(cancellationToken);
+            await context.Tags.AddRangeAsync(
+                tagIds.Where(x => !existingTagIds.Contains(x)).Select(x => new Tag { TagId = x }),
+                cancellationToken
+            );
 
             // add the new article tags
             await context.ArticleTags.AddRangeAsync(articleTagsToCreate, cancellationToken);
@@ -172,7 +181,6 @@ public class Edit
                     {
                         Article = article,
                         ArticleId = article.ArticleId,
-                        Tag = new Tag { TagId = tag },
                         TagId = tag,
                     };
                     articleTagsToCreate.Add(at);
