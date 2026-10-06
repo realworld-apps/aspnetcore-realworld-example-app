@@ -155,6 +155,11 @@ public class Edit
                 throw new RestException(HttpStatusCode.NotFound, "article", Constants.NOT_FOUND);
             }
 
+            await new[] { article }.PopulateFavoritedAsync(
+                context,
+                currentUserAccessor.GetCurrentUsername(),
+                cancellationToken
+            );
             return new ArticleEnvelope(article);
         }
 
