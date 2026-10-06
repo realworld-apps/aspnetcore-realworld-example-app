@@ -1,4 +1,7 @@
 using System;
+using System.Globalization;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Conduit.Features.Profiles;
 using Conduit.Infrastructure;
@@ -7,6 +10,7 @@ using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -83,6 +87,38 @@ public static class ServicesExtensions
                 options.TokenValidationParameters = tokenValidationParameters;
                 options.Events = new JwtBearerEvents
                 {
+                    OnTokenValidated = async context =>
+                    {
+                        var identity = context.Principal?.Identity as ClaimsIdentity;
+                        var subject = identity?.FindFirst(ClaimTypes.NameIdentifier);
+                        if (
+                            subject is null
+                            || !subject.Value.StartsWith("user:", StringComparison.Ordinal)
+                            || !int.TryParse(
+                                subject.Value[5..],
+                                NumberStyles.None,
+                                CultureInfo.InvariantCulture,
+                                out var personId
+                            )
+                        )
+                        {
+                            context.Fail("Invalid user identity");
+                            return;
+                        }
+                        var db =
+                            context.HttpContext.RequestServices.GetRequiredService<ConduitContext>();
+                        var username = await db
+                            .Persons.Where(x => x.PersonId == personId)
+                            .Select(x => x.Username)
+                            .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+                        if (username is null)
+                        {
+                            context.Fail("User no longer exists");
+                            return;
+                        }
+                        identity!.RemoveClaim(subject);
+                        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, username));
+                    },
                     OnMessageReceived = (context) =>
                     {
                         var token = context.HttpContext.Request.Headers.Authorization.ToString();
