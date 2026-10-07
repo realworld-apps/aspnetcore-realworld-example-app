@@ -282,6 +282,9 @@ tools
 # .env file contains default environment variables for docker
 .env
 
+# Persisted local-development JWT signing key
+.jwt-signing-key
+
 .DS_Store
 
 # sqlite database

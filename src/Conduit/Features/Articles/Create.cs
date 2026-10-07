@@ -58,7 +58,7 @@ public class Create
             var tags = new List<Tag>();
             foreach (var tag in (message.Article.TagList ?? []).Distinct(StringComparer.Ordinal))
             {
-                var t = await context.Tags.FindAsync(tag);
+                var t = await context.Tags.FindAsync([tag], cancellationToken);
                 if (t == null)
                 {
                     t = new Tag { TagId = tag };

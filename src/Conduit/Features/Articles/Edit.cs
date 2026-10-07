@@ -172,7 +172,7 @@ public class Edit
         )
         {
             var articleTagsToCreate = new List<ArticleTag>();
-            foreach (var tag in articleTagList)
+            foreach (var tag in articleTagList.Distinct())
             {
                 var at = article.ArticleTags?.FirstOrDefault(t => t.TagId == tag);
                 if (at == null)

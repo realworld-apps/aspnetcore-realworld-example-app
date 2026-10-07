@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -10,6 +11,8 @@ const string Build = "build";
 const string Test = "test";
 const string Format = "format";
 const string Publish = "publish";
+var checkFormat = args.Contains("--check-format", StringComparer.Ordinal);
+args = [.. args.Where(x => x != "--check-format")];
 
 Target(
     Clean,
@@ -39,11 +42,15 @@ Target(
     () =>
     {
         Run("dotnet", "tool restore");
-        Run("dotnet", "csharpier format .");
+        Run("dotnet", checkFormat ? "csharpier check ." : "csharpier format .");
     }
 );
 
-Target(Build, [Format], () => Run("dotnet", "build Conduit.slnx -c Release"));
+Target(
+    Build,
+    [Format],
+    () => Run("dotnet", "build Conduit.slnx -c Release -p:RestoreLockedMode=true")
+);
 
 Target(
     Test,

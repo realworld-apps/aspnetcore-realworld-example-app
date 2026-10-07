@@ -3,7 +3,12 @@ services:
     build: .
     environment:
      - Jwt__SigningKey=${Jwt__SigningKey:?Generate and export a unique JWT signing key first}
-     - ASPNETCORE_Conduit_DatabaseProvider=${ASPNETCORE_Conduit_DatabaseProvider}
-     - ASPNETCORE_Conduit_ConnectionString=${ASPNETCORE_Conduit_ConnectionString}
+     - Database__Provider=${Database__Provider:-sqlite}
+     - ConnectionStrings__Conduit=${ConnectionStrings__Conduit:-Data Source=/data/realworld.db}
+    volumes:
+     - conduit-data:/data
     ports:
      - "8080:8080"
+
+volumes:
+  conduit-data:

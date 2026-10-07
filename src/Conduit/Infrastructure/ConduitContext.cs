@@ -1,6 +1,13 @@
 using System;
 using System.Data;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Conduit.Domain;
+using Conduit.Infrastructure.Errors;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -8,6 +15,7 @@ namespace Conduit.Infrastructure;
 
 public class ConduitContext(DbContextOptions options) : DbContext(options)
 {
+    private static readonly string[] UniqueFields = ["Username", "Email", "Slug"];
     private IDbContextTransaction? _currentTransaction;
 
     public DbSet<Article> Articles { get; init; } = null!;
@@ -20,10 +28,19 @@ public class ConduitContext(DbContextOptions options) : DbContext(options)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Person>(b =>
+        {
+            b.Property(x => x.Username).HasMaxLength(256);
+            b.Property(x => x.Email).HasMaxLength(320);
+            b.HasIndex(x => x.Username).IsUnique();
+            b.HasIndex(x => x.Email).IsUnique();
+        });
         // timestamps are stored as UTC; restore the DateTimeKind lost by providers like SQLite so
         // they serialize with the trailing 'Z' the RealWorld spec relies on
         modelBuilder.Entity<Article>(b =>
         {
+            b.Property(x => x.Slug).HasMaxLength(450);
+            b.HasIndex(x => x.Slug).IsUnique();
             b.Property(x => x.CreatedAt)
                 .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
             b.Property(x => x.UpdatedAt)
@@ -91,48 +108,95 @@ public class ConduitContext(DbContextOptions options) : DbContext(options)
     }
 
     #region Transaction Handling
-    public void BeginTransaction()
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken)
     {
         if (_currentTransaction != null)
         {
             return;
         }
 
-        if (!Database.IsInMemory())
+        if (Database.IsRelational())
         {
-            _currentTransaction = Database.BeginTransaction(IsolationLevel.ReadCommitted);
+            _currentTransaction = await Database.BeginTransactionAsync(
+                Database.IsSqlite() ? IsolationLevel.Serializable : IsolationLevel.ReadCommitted,
+                cancellationToken
+            );
         }
     }
 
-    public void CommitTransaction()
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken)
     {
         try
         {
-            _currentTransaction?.Commit();
+            if (_currentTransaction != null)
+            {
+                await _currentTransaction.CommitAsync(cancellationToken);
+            }
         }
         catch
         {
-            RollbackTransaction();
+            await RollbackTransactionAsync();
             throw;
         }
         finally
         {
-            _currentTransaction?.Dispose();
+            if (_currentTransaction != null)
+            {
+                await _currentTransaction.DisposeAsync();
+            }
             _currentTransaction = null;
         }
     }
 
-    public void RollbackTransaction()
+    public async Task RollbackTransactionAsync()
     {
         try
         {
-            _currentTransaction?.Rollback();
+            if (_currentTransaction != null)
+            {
+                await _currentTransaction.RollbackAsync();
+            }
         }
         finally
         {
-            _currentTransaction?.Dispose();
+            if (_currentTransaction != null)
+            {
+                await _currentTransaction.DisposeAsync();
+            }
             _currentTransaction = null;
         }
     }
     #endregion
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+            when (exception.InnerException
+                    is SqliteException { SqliteExtendedErrorCode: 2067 or 1555 }
+                        or SqlException { Number: 2601 or 2627 }
+            )
+        {
+            // Match only known identity indexes; unrelated constraint failures remain server errors.
+            var detail = exception.InnerException.Message;
+            var field = UniqueFields.FirstOrDefault(name =>
+                detail.Contains($"Persons.{name}", StringComparison.Ordinal)
+                || detail.Contains($"Articles.{name}", StringComparison.Ordinal)
+                || detail.Contains($"IX_Persons_{name}", StringComparison.Ordinal)
+                || detail.Contains($"IX_Articles_{name}", StringComparison.Ordinal)
+            );
+            if (field == null)
+            {
+                throw;
+            }
+            throw new RestException(
+                HttpStatusCode.Conflict,
+                field.ToLowerInvariant(),
+                Constants.IN_USE
+            );
+        }
+    }
 }

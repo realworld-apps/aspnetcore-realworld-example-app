@@ -8,6 +8,7 @@ using Conduit.Infrastructure.Errors;
 using Conduit.Infrastructure.Security;
 using FluentValidation;
 using Mediator;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conduit.Features.Users;
@@ -28,8 +29,14 @@ public class Login
         public CommandValidator()
         {
             RuleFor(x => x.User).NotNull();
-            RuleFor(x => x.User.Email).NotEmpty().WithMessage(Constants.BLANK);
-            RuleFor(x => x.User.Password).NotEmpty().WithMessage(Constants.BLANK);
+            When(
+                x => x.User != null,
+                () =>
+                {
+                    RuleFor(x => x.User.Email).NotEmpty().WithMessage(Constants.BLANK);
+                    RuleFor(x => x.User.Password).NotEmpty().WithMessage(Constants.BLANK);
+                }
+            );
         }
     }
 
@@ -53,14 +60,22 @@ public class Login
                 throw new RestException(HttpStatusCode.Unauthorized, "credentials", "invalid");
             }
 
-            var hash = await passwordHasher.Hash(
+            var verification = passwordHasher.Verify(
                 message.User.Password ?? throw new InvalidOperationException(),
+                person.Hash,
                 person.Salt
             );
 
-            if (!person.Hash.SequenceEqual(hash))
+            if (verification == PasswordVerificationResult.Failed)
             {
                 throw new RestException(HttpStatusCode.Unauthorized, "credentials", "invalid");
+            }
+
+            if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                person.Hash = await passwordHasher.Hash(message.User.Password, []);
+                person.Salt = [];
+                await context.SaveChangesAsync(cancellationToken);
             }
 
             var user = mapper.PersonToUser(person);

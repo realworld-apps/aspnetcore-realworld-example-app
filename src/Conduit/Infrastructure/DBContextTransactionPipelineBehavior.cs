@@ -20,19 +20,24 @@ public class DBContextTransactionPipelineBehavior<TRequest, TResponse>(ConduitCo
         CancellationToken cancellationToken
     )
     {
+        // Reads don't need a transaction spanning the entire handler.
+        if (request is IReadOnlyRequest)
+        {
+            return await next(request, cancellationToken);
+        }
         TResponse? result;
 
         try
         {
-            context.BeginTransaction();
+            await context.BeginTransactionAsync(cancellationToken);
 
             result = await next(request, cancellationToken);
 
-            context.CommitTransaction();
+            await context.CommitTransactionAsync(cancellationToken);
         }
         catch (Exception)
         {
-            context.RollbackTransaction();
+            await context.RollbackTransactionAsync();
             throw;
         }
 

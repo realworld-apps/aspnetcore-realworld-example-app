@@ -10,7 +10,7 @@ namespace Conduit.Features.Tags;
 
 public class List
 {
-    public record Query : IRequest<TagsEnvelope>;
+    public record Query : IRequest<TagsEnvelope>, IReadOnlyRequest;
 
     public class QueryHandler(ConduitContext context) : IRequestHandler<Query, TagsEnvelope>
     {

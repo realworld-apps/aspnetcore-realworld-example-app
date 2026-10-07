@@ -10,7 +10,7 @@ namespace Conduit.Features.Comments;
 
 public class List
 {
-    public record Query(string Slug) : IRequest<CommentsEnvelope>;
+    public record Query(string Slug) : IRequest<CommentsEnvelope>, IReadOnlyRequest;
 
     public class QueryHandler(ConduitContext context) : IRequestHandler<Query, CommentsEnvelope>
     {

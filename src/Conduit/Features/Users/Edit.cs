@@ -102,17 +102,19 @@ public class Edit
             RuleFor(x => x.User.Username)
                 .NotEmpty()
                 .WithMessage(Constants.BLANK)
-                .When(x => x.User.UsernameSet);
+                .MaximumLength(256)
+                .When(x => x.User is { UsernameSet: true });
             RuleFor(x => x.User.Email)
                 .NotEmpty()
                 .WithMessage(Constants.BLANK)
-                .When(x => x.User.EmailSet);
+                .MaximumLength(320)
+                .When(x => x.User is { EmailSet: true });
             RuleFor(x => x.User.Password)
                 .NotEmpty()
                 .WithMessage(Constants.BLANK)
                 .MinimumLength(8)
                 .WithMessage(Constants.PASSWORD_TOO_SHORT)
-                .When(x => x.User.PasswordSet);
+                .When(x => x.User is { PasswordSet: true });
         }
     }
 
@@ -179,9 +181,8 @@ public class Edit
 
             if (message.User.PasswordSet && !string.IsNullOrWhiteSpace(message.User.Password))
             {
-                var salt = Guid.NewGuid().ToByteArray();
-                person.Hash = await passwordHasher.Hash(message.User.Password, salt);
-                person.Salt = salt;
+                person.Hash = await passwordHasher.Hash(message.User.Password, []);
+                person.Salt = [];
             }
 
             await context.SaveChangesAsync(cancellationToken);

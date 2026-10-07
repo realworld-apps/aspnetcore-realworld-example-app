@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Conduit.Features.Users;
 using Conduit.Infrastructure.Security;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -21,6 +22,11 @@ public class CreateTests : SliceFixture
         );
 
         Assert.NotNull(created);
-        Assert.Equal(created.Hash, await new PasswordHasher().Hash("password", created.Salt));
+        using var hasher = new PasswordHasher();
+        Assert.Equal(
+            PasswordVerificationResult.Success,
+            hasher.Verify("password", created.Hash, created.Salt)
+        );
+        Assert.Empty(created.Salt);
     }
 }
