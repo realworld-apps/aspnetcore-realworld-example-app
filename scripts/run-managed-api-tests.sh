@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-API_URL="${API_URL:-http://localhost:5000}"
+API_URL="${API_URL:-http://localhost:5050}"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/conduit-api.XXXXXX")"
 SERVER_PID=""
 cleanup() {

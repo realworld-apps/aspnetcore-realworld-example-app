@@ -37,7 +37,7 @@ The CI-equivalent build, test, and publish pipeline is:
 dotnet run --project build/build.csproj
 ```
 
-Run the application locally with `make run-local`. The API is available at `http://localhost:5000`, and Swagger is available at `/swagger`.
+Run the application locally with `make run-local`. The API is available at `http://localhost:5050`, and Swagger is available at `/swagger`.
 
 The optional RealWorld API suites require the `realworld` submodule plus Hurl or Bun/Bruno:
 

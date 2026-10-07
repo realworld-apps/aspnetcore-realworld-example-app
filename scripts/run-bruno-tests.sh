@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOST="${HOST:-http://localhost:5000}"
+HOST="${HOST:-http://localhost:5050}"
 BRUNO_VERSION=4.2.1
 cd "$ROOT/realworld/specs/api/bruno"
 for folder in */; do

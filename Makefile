@@ -1,17 +1,31 @@
-API_URL ?= http://localhost:5000
+API_URL ?= http://localhost:5050
 PROJECT := src/Conduit/Conduit.csproj
+LOCAL_DB ?= $(CURDIR)/conduit-local.db
+
+# Explicitly supplied keys take precedence over the persisted local-development key.
+export Jwt__SigningKey
+define WITH_LOCAL_JWT
+@set -e; \
+if [ -z "$$Jwt__SigningKey" ]; then \
+	if [ ! -s .jwt-signing-key ]; then \
+		umask 077; \
+		openssl rand -base64 32 > .jwt-signing-key; \
+	fi; \
+	export Jwt__SigningKey="$$(cat .jwt-signing-key)"; \
+fi;
+endef
 
 build:
-	docker compose build
+	$(WITH_LOCAL_JWT) docker compose build
 run:
-	docker compose up
+	$(WITH_LOCAL_JWT) docker compose up
 
 # fetch the RealWorld API spec (hurl + bruno test collections)
 submodule:
 	git submodule update --init realworld
 
 run-local:
-	ASPNETCORE_URLS=$(API_URL) dotnet run --project $(PROJECT)
+	$(WITH_LOCAL_JWT) ASPNETCORE_URLS=$(API_URL) ConnectionStrings__Conduit="$${ConnectionStrings__Conduit:-Data Source=$(LOCAL_DB)}" dotnet run --project $(PROJECT)
 
 # API spec tests against an already running server (make run-local in another terminal)
 test-hurl:

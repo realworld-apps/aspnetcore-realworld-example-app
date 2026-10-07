@@ -35,12 +35,18 @@ Install the .NET SDK specified in [`global.json`](global.json), currently `10.0.
 To start locally on a fresh SQLite database:
 
 ```sh
-export Jwt__SigningKey="$(openssl rand -base64 32)"
 make run-local
 ```
 
-The API is at `http://localhost:5000/api` and Swagger at `http://localhost:5000/swagger`.
-Keep the signing key stable between runs. **Existing databases created by older versions
+The Makefile generates a local-development signing key using OpenSSL and reuses it
+from `.jwt-signing-key` (excluded from Git and Docker images). An explicitly supplied
+`Jwt__SigningKey` takes precedence. Keep the key file to preserve sessions between runs.
+Local runs use `conduit-local.db` in the repository root, leaving older `realworld.db`
+files untouched. Override the path with `make run-local LOCAL_DB=/path/to/conduit.db`,
+or supply `ConnectionStrings__Conduit` to use your own connection string.
+
+The API is at `http://localhost:5050/api` and Swagger at `http://localhost:5050/swagger`.
+**Existing databases created by older versions
 must be backed up and baselined first:** see [database migrations](docs/database-migrations.md).
 
 The main validation target formats the repository, builds the solution in Release mode, and runs the integration tests:
@@ -75,11 +81,15 @@ See [`AGENTS.md`](AGENTS.md) for repository layout, development conventions, and
 
 ## Docker Build
 
-Before starting the API locally or with Docker, generate a signing key:
+The Makefile also sets up the local-development signing key for Docker:
 
 ```sh
-export Jwt__SigningKey="$(openssl rand -base64 32)"
+make build
+make run
 ```
+
+When running directly without Make, supply `Jwt__SigningKey` yourself (for example,
+`export Jwt__SigningKey="$(openssl rand -base64 32)"` for local development).
 
 Each deployment must use its own cryptographically random key (at least 32 bytes,
 base64-encoded), provided through protected configuration such as a secret manager
@@ -104,7 +114,7 @@ There is a `Makefile` for macOS and Linux:
 - `make build` executes `docker compose build`
 - `make run` executes `docker compose up`
 
-Docker exposes `http://localhost:8080/api` and `/swagger`, not port 5000.
+Docker exposes `http://localhost:8080/api` and `/swagger`, not port 5050.
 The container runs as the non-root `app` user. Compose stores SQLite data in the
 `conduit-data` named volume mounted at `/data`; data survives container replacement.
 For custom bind mounts, make the database directory writable by the container user.
@@ -124,7 +134,7 @@ dotnet run --project build/build.csproj -- test
 
 Run the API with `make run-local`. Swagger is available at:
 
-`http://localhost:5000/swagger`
+`http://localhost:5050/swagger`
 
 ## RealWorld API spec tests
 
