@@ -13,7 +13,7 @@ namespace Conduit.Features.Users;
 
 public class Details
 {
-    public record Query(int PersonId) : IRequest<UserEnvelope>;
+    public record Query(int PersonId) : IRequest<UserEnvelope>, IReadOnlyRequest;
 
     public class QueryValidator : AbstractValidator<Query>
     {

@@ -1,4 +1,4 @@
-API_URL := http://localhost:5000
+API_URL ?= http://localhost:5000
 PROJECT := src/Conduit/Conduit.csproj
 
 build:
@@ -18,25 +18,13 @@ test-hurl:
 	HOST=$(API_URL) realworld/specs/api/run-api-tests-hurl.sh
 
 test-bruno:
-	HOST=$(API_URL) realworld/specs/api/run-api-tests-bruno.sh
+	HOST=$(API_URL) bash scripts/run-bruno-tests.sh
 
 # API spec tests managing the server themselves (used by CI)
 test-hurl-with-managed-server:
-	$(call run_with_managed_server,realworld/specs/api/run-api-tests-hurl.sh)
+	API_URL=$(API_URL) bash scripts/run-managed-api-tests.sh realworld/specs/api/run-api-tests-hurl.sh
 
 test-bruno-with-managed-server:
-	$(call run_with_managed_server,realworld/specs/api/run-api-tests-bruno.sh)
-
-# starts the API on a fresh database, waits for it, runs $(1), then shuts the API down
-define run_with_managed_server
-	rm -f src/Conduit/realworld.db; \
-	Jwt__SigningKey=$${Jwt__SigningKey:-$$(openssl rand -base64 32)} ASPNETCORE_URLS=$(API_URL) dotnet run --project $(PROJECT) & \
-	SERVER_PID=$$!; \
-	timeout 120 bash -c 'until curl -s $(API_URL)/api/tags > /dev/null; do sleep 0.5; done'; \
-	HOST=$(API_URL) $(1); \
-	STATUS=$$?; \
-	kill $$SERVER_PID; \
-	exit $$STATUS
-endef
+	API_URL=$(API_URL) bash scripts/run-managed-api-tests.sh scripts/run-bruno-tests.sh
 
 .PHONY: build run submodule run-local test-hurl test-bruno test-hurl-with-managed-server test-bruno-with-managed-server

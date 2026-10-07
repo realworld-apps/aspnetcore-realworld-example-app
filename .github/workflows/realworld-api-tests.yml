@@ -2,11 +2,15 @@ name: RealWorld API Tests
 
 on:
   push:
+  pull_request:
   schedule:
     # weekly canary against the upstream spec HEAD, to surface drift before the
     # Dependabot submodule bump PR does
     - cron: '0 6 * * 1'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   hurl:
@@ -19,11 +23,10 @@ jobs:
         submodules: true
     - uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.302
+        global-json-file: global.json
+    - run: dotnet restore Conduit.slnx --locked-mode
     - name: Install Hurl
-      run: |
-        curl -sSL https://github.com/Orange-OpenSource/hurl/releases/download/8.0.1/hurl-8.0.1-x86_64-unknown-linux-gnu.tar.gz | tar xz -C "$RUNNER_TEMP"
-        echo "$RUNNER_TEMP/hurl-8.0.1-x86_64-unknown-linux-gnu/bin" >> "$GITHUB_PATH"
+      run: bash scripts/install-hurl.sh
     - name: Run Hurl tests
       run: make test-hurl-with-managed-server
 
@@ -37,7 +40,8 @@ jobs:
         submodules: true
     - uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.302
+        global-json-file: global.json
+    - run: dotnet restore Conduit.slnx --locked-mode
     - uses: oven-sh/setup-bun@v2
     - name: Run Bruno tests
       run: make test-bruno-with-managed-server
@@ -57,10 +61,9 @@ jobs:
       run: git submodule update --remote realworld
     - uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 10.0.302
+        global-json-file: global.json
+    - run: dotnet restore Conduit.slnx --locked-mode
     - name: Install Hurl
-      run: |
-        curl -sSL https://github.com/Orange-OpenSource/hurl/releases/download/8.0.1/hurl-8.0.1-x86_64-unknown-linux-gnu.tar.gz | tar xz -C "$RUNNER_TEMP"
-        echo "$RUNNER_TEMP/hurl-8.0.1-x86_64-unknown-linux-gnu/bin" >> "$GITHUB_PATH"
+      run: bash scripts/install-hurl.sh
     - name: Run Hurl tests
       run: make test-hurl-with-managed-server

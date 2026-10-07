@@ -7,7 +7,9 @@ namespace Conduit.Features.Profiles;
 
 public class Details
 {
-    public record Query(string Username) : IRequest<ProfileEnvelope>;
+    public record Query(string Username)
+        : IRequest<ProfileEnvelope>,
+            Infrastructure.IReadOnlyRequest;
 
     public class QueryValidator : AbstractValidator<Query>
     {

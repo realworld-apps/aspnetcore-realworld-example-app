@@ -56,9 +56,9 @@ public class Create
                 cancellationToken
             );
             var tags = new List<Tag>();
-            foreach (var tag in (message.Article.TagList ?? Enumerable.Empty<string>()))
+            foreach (var tag in (message.Article.TagList ?? Enumerable.Empty<string>()).Distinct())
             {
-                var t = await context.Tags.FindAsync(tag);
+                var t = await context.Tags.FindAsync([tag], cancellationToken);
                 if (t == null)
                 {
                     t = new Tag { TagId = tag };

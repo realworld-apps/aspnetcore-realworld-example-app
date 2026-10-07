@@ -1,8 +1,8 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Conduit.Infrastructure;
 using Mediator;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +12,8 @@ public class SliceFixture : IDisposable
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ServiceProvider _provider;
-    private readonly string _dbName = Guid.NewGuid() + ".db";
+    private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly IServiceScope _directScope;
 
     public SliceFixture()
     {
@@ -20,19 +21,27 @@ public class SliceFixture : IDisposable
         services.AddLogging();
         services.AddConduit();
 
-        var builder = new DbContextOptionsBuilder();
-        builder.UseInMemoryDatabase(_dbName);
-        services.AddSingleton(new ConduitContext(builder.Options));
+        _connection.Open();
+        services.AddDbContext<ConduitContext>(options => options.UseSqlite(_connection));
 
         _provider = services.BuildServiceProvider();
 
+        _directScope = _provider.CreateScope();
         GetDbContext().Database.EnsureCreated();
         _scopeFactory = _provider.GetRequiredService<IServiceScopeFactory>();
     }
 
-    public ConduitContext GetDbContext() => _provider.GetRequiredService<ConduitContext>();
+    // A dedicated scope supports older tests that construct handlers directly.
+    // Mediator and database helpers each use a fresh scoped context.
+    public ConduitContext GetDbContext() =>
+        _directScope.ServiceProvider.GetRequiredService<ConduitContext>();
 
-    public void Dispose() => File.Delete(_dbName);
+    public void Dispose()
+    {
+        _directScope.Dispose();
+        _provider.Dispose();
+        _connection.Dispose();
+    }
 
     public async Task ExecuteScopeAsync(Func<IServiceProvider, Task> action)
     {

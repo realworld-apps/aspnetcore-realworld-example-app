@@ -24,6 +24,49 @@ namespace Conduit;
 
 public static class ServicesExtensions
 {
+    public static void AddConduitDatabase(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var provider =
+            configuration["Database:Provider"]
+            ?? configuration["Conduit_DatabaseProvider"]
+            ?? "sqlite";
+        var connection =
+            configuration.GetConnectionString("Conduit")
+            ?? configuration["Conduit_ConnectionString"];
+        switch (provider.Trim().ToLowerInvariant())
+        {
+            case "sqlite":
+                services.AddDbContext<SqliteConduitContext>(options =>
+                    options.UseSqlite(connection ?? "Data Source=realworld.db")
+                );
+                services.AddScoped<ConduitContext>(sp =>
+                    sp.GetRequiredService<SqliteConduitContext>()
+                );
+                break;
+            case "sqlserver":
+                if (string.IsNullOrWhiteSpace(connection))
+                {
+                    throw new InvalidOperationException(
+                        "ConnectionStrings:Conduit is required for SQL Server."
+                    );
+                }
+                services.AddDbContext<SqlServerConduitContext>(options =>
+                    options.UseSqlServer(connection)
+                );
+                services.AddScoped<ConduitContext>(sp =>
+                    sp.GetRequiredService<SqlServerConduitContext>()
+                );
+                break;
+            default:
+                throw new InvalidOperationException(
+                    "Database:Provider must be sqlite or sqlserver."
+                );
+        }
+    }
+
     public static void AddConduit(this IServiceCollection services)
     {
         services.AddMediator(options =>
@@ -212,7 +255,6 @@ public static class ServicesExtensions
             )
             .CreateLogger();
 
-        loggerFactory.AddSerilog(log);
-        Log.Logger = log;
+        loggerFactory.AddSerilog(log, dispose: true);
     }
 }

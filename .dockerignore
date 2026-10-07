@@ -285,3 +285,7 @@ Dockerfile
 .git/
 bin/
 obj/
+*.db
+*.db-shm
+*.db-wal
+realworld/

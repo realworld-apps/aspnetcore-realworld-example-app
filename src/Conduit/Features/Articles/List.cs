@@ -2,6 +2,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Conduit.Features.Profiles;
 using Conduit.Infrastructure;
 using Conduit.Infrastructure.Errors;
 using Mediator;
@@ -18,7 +19,7 @@ public class List
         int? Limit,
         int? Offset,
         bool IsFeed = false
-    ) : IRequest<ArticlesEnvelope>;
+    ) : IRequest<ArticlesEnvelope>, IReadOnlyRequest;
 
     public class QueryHandler(ConduitContext context, ICurrentUserAccessor currentUserAccessor)
         : IRequestHandler<Query, ArticlesEnvelope>
@@ -28,110 +29,80 @@ public class List
             CancellationToken cancellationToken
         )
         {
-            var queryable = context.Articles.GetAllData();
+            var currentPersonId = currentUserAccessor.GetCurrentPersonId();
+            var queryable = context.Articles.AsNoTracking();
 
-            if (message.IsFeed && currentUserAccessor.GetCurrentPersonId() != null)
+            if (message.IsFeed)
             {
-                // note: Person.Followers holds the FollowedPeople rows where this person is the
-                // observer, i.e. the people this person follows
-                var currentUser = await context
-                    .Persons.Include(x => x.Followers)
-                    .FirstOrDefaultAsync(
-                        x => x.PersonId == currentUserAccessor.GetCurrentPersonId(),
-                        cancellationToken
-                    );
-
-                if (currentUser is null)
+                if (currentPersonId == null)
                 {
-                    throw new RestException(HttpStatusCode.NotFound, "user", Constants.NOT_FOUND);
+                    throw new RestException(HttpStatusCode.Unauthorized, "token", "is missing");
                 }
                 queryable = queryable.Where(x =>
-                    currentUser.Followers.Select(y => y.TargetId).Contains(x.Author!.PersonId)
+                    x.Author != null
+                    && context.FollowedPeople.Any(y =>
+                        y.ObserverId == currentPersonId && y.TargetId == x.Author.PersonId
+                    )
                 );
             }
 
             if (!string.IsNullOrWhiteSpace(message.Tag))
             {
-                var tag = await context.ArticleTags.FirstOrDefaultAsync(
-                    x => x.TagId == message.Tag,
-                    cancellationToken
-                );
-                if (tag != null)
-                {
-                    queryable = queryable.Where(x =>
-                        x.ArticleTags.Select(y => y.TagId).Contains(tag.TagId)
-                    );
-                }
-                else
-                {
-                    return new ArticlesEnvelope();
-                }
+                queryable = queryable.Where(x => x.ArticleTags.Any(y => y.TagId == message.Tag));
             }
 
             if (!string.IsNullOrWhiteSpace(message.Author))
             {
-                var author = await context.Persons.FirstOrDefaultAsync(
-                    x => x.Username == message.Author,
-                    cancellationToken
+                queryable = queryable.Where(x =>
+                    x.Author != null && x.Author.Username == message.Author
                 );
-                if (author != null)
-                {
-                    queryable = queryable.Where(x => x.Author == author);
-                }
-                else
-                {
-                    return new ArticlesEnvelope();
-                }
             }
 
             if (!string.IsNullOrWhiteSpace(message.FavoritedUsername))
             {
-                var author = await context.Persons.FirstOrDefaultAsync(
-                    x => x.Username == message.FavoritedUsername,
-                    cancellationToken
+                queryable = queryable.Where(x =>
+                    x.ArticleFavorites.Any(y =>
+                        y.Person != null && y.Person.Username == message.FavoritedUsername
+                    )
                 );
-                if (author != null)
-                {
-                    queryable = queryable.Where(x =>
-                        x.ArticleFavorites.Any(y => y.PersonId == author.PersonId)
-                    );
-                }
-                else
-                {
-                    return new ArticlesEnvelope();
-                }
             }
 
+            var count = await queryable.CountAsync(cancellationToken);
             var articles = await queryable
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.ArticleId)
                 .Skip(message.Offset ?? 0)
                 .Take(message.Limit ?? 20)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-
-            // the spec omits the article body in list responses (null values are not serialized)
-            foreach (var article in articles)
-            {
-                article.Body = null;
-            }
-
-            // populate author.following for the current user
-            var currentPersonId = currentUserAccessor.GetCurrentPersonId();
-            if (currentPersonId != null)
-            {
-                var followedIds = await context
-                    .FollowedPeople.Where(x => x.ObserverId == currentPersonId)
-                    .Select(x => x.TargetId)
-                    .ToListAsync(cancellationToken);
-                foreach (var author in articles.Select(x => x.Author))
+                .Select(x => new ArticleSummary
                 {
-                    author?.IsFollowedByCurrentUser = followedIds.Contains(author.PersonId);
-                }
-            }
-
-            articles.PopulateFavorited(currentPersonId);
-            return new ArticlesEnvelope { Articles = articles, ArticlesCount = queryable.Count() };
+                    Slug = x.Slug,
+                    Title = x.Title,
+                    Description = x.Description,
+                    CreatedAt = x.CreatedAt,
+                    UpdatedAt = x.UpdatedAt,
+                    TagList = x.ArticleTags.Select(y => y.TagId!).ToList(),
+                    FavoritesCount = x.ArticleFavorites.Count,
+                    Favorited =
+                        currentPersonId != null
+                        && x.ArticleFavorites.Any(y => y.PersonId == currentPersonId),
+                    Author =
+                        x.Author == null
+                            ? null
+                            : new Profile
+                            {
+                                Username = x.Author.Username,
+                                Bio = x.Author.Bio,
+                                Image = x.Author.Image,
+                                IsFollowed =
+                                    currentPersonId != null
+                                    && context.FollowedPeople.Any(y =>
+                                        y.ObserverId == currentPersonId
+                                        && y.TargetId == x.Author.PersonId
+                                    ),
+                            },
+                })
+                .ToListAsync(cancellationToken);
+            return new ArticlesEnvelope { Articles = articles, ArticlesCount = count };
         }
     }
 }
