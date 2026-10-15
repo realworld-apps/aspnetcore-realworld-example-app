@@ -29,7 +29,7 @@ The basic architecture is based on this reference architecture: [ContosoUniversi
 
 ## Getting started
 
-Install the .NET SDK specified in [`global.json`](global.json), currently `10.0.401`.
+Install the .NET SDK specified in [`global.json`](global.json), currently `10.0.402`.
 `rollForward: latestFeature` allows newer .NET 10 feature bands and patches; CI reads this file too.
 
 To start locally on a fresh SQLite database:

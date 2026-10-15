@@ -10,7 +10,7 @@
 
 ## Toolchain
 
-- Use the .NET SDK version specified in `global.json` (`10.0.401`, with `latestFeature` roll-forward) and target `net10.0`.
+- Use the .NET SDK version specified in `global.json` (`10.0.402`, with `latestFeature` roll-forward) and target `net10.0`.
 - Package versions are managed centrally in `Directory.Packages.props`.
 - Restore packages with lock files enabled. Restore updates to `packages.lock.json` files should be included when dependencies change.
 - The build enforces locked restore. CI passes `--check-format` to the build runner to check formatting without rewriting files.
