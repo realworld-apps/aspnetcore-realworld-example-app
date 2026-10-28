@@ -7,7 +7,7 @@ COPY . .
 RUN dotnet restore Conduit.slnx --locked-mode \
     && dotnet run --project build/build.csproj --no-restore -- publish --check-format
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.13 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.14 AS base
 
 WORKDIR /app
 COPY --from=build /src/publish .
