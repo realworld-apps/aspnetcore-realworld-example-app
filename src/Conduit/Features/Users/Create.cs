@@ -33,9 +33,12 @@ public class Create
                         .WithMessage(Constants.BLANK)
                         .MaximumLength(256);
                     RuleFor(x => x.User.Email)
+                        .Cascade(CascadeMode.Stop)
                         .NotEmpty()
                         .WithMessage(Constants.BLANK)
-                        .MaximumLength(320);
+                        .MaximumLength(320)
+                        .EmailAddress()
+                        .WithMessage(Constants.INVALID);
                     RuleFor(x => x.User.Password)
                         .NotEmpty()
                         .WithMessage(Constants.BLANK)

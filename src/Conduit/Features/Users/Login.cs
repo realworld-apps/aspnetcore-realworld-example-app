@@ -33,7 +33,12 @@ public class Login
                 x => x.User != null,
                 () =>
                 {
-                    RuleFor(x => x.User.Email).NotEmpty().WithMessage(Constants.BLANK);
+                    RuleFor(x => x.User.Email)
+                        .Cascade(CascadeMode.Stop)
+                        .NotEmpty()
+                        .WithMessage(Constants.BLANK)
+                        .EmailAddress()
+                        .WithMessage(Constants.INVALID);
                     RuleFor(x => x.User.Password).NotEmpty().WithMessage(Constants.BLANK);
                 }
             );

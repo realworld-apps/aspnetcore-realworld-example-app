@@ -15,7 +15,7 @@ permissions:
 jobs:
   hurl:
     name: Hurl API spec tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # hurl 8.x tarball needs libxml2.so.2, absent from Ubuntu 26.04 (ubuntu-latest)
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v7
@@ -51,7 +51,7 @@ jobs:
   hurl-upstream-canary:
     name: Hurl API spec tests (upstream HEAD)
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # hurl 8.x tarball needs libxml2.so.2, absent from Ubuntu 26.04 (ubuntu-latest)
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v7

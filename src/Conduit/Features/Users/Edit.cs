@@ -105,9 +105,12 @@ public class Edit
                 .MaximumLength(256)
                 .When(x => x.User is { UsernameSet: true });
             RuleFor(x => x.User.Email)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(Constants.BLANK)
                 .MaximumLength(320)
+                .EmailAddress()
+                .WithMessage(Constants.INVALID)
                 .When(x => x.User is { EmailSet: true });
             RuleFor(x => x.User.Password)
                 .NotEmpty()
