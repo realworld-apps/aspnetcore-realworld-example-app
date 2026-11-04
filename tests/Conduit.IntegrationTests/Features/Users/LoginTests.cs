@@ -16,14 +16,14 @@ public class LoginTests : SliceFixture
         var person = new Person
         {
             Username = "username",
-            Email = "email",
+            Email = "user@example.com",
             Hash = await new PasswordHasher().Hash("password", salt),
             Salt = salt,
         };
         await InsertAsync(person);
 
         var command = new Login.Command(
-            new Login.UserData { Email = "email", Password = "password" }
+            new Login.UserData { Email = "user@example.com", Password = "password" }
         );
 
         var user = await SendAsync(command);

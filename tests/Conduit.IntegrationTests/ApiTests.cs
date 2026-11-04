@@ -56,6 +56,57 @@ public class ApiTests
         Assert.Equal(JsonValueKind.Object, document.RootElement.GetProperty("errors").ValueKind);
     }
 
+    [Theory]
+    [InlineData("register", "not-an-email", "is invalid")]
+    [InlineData("register", "", "can't be blank")]
+    [InlineData("login", "user@", "is invalid")]
+    [InlineData("login", "", "can't be blank")]
+    [InlineData("update", "not-an-email", "is invalid")]
+    [InlineData("update", "", "can't be blank")]
+    public async Task Invalid_Email_Is_Rejected(string operation, string email, string error)
+    {
+        using var factory = new ApiFactory();
+        using var client = factory.CreateClient();
+        if (operation == "update")
+        {
+            using var register = await client.PostAsync(
+                "/api/users",
+                Json(
+                    """{"user":{"username":"user","email":"user@example.com","password":"password"}}"""
+                )
+            );
+            register.EnsureSuccessStatusCode();
+            using var user = JsonDocument.Parse(await register.Content.ReadAsStringAsync());
+            client.DefaultRequestHeaders.Add(
+                "Authorization",
+                "Token " + user.RootElement.GetProperty("user").GetProperty("token").GetString()
+            );
+        }
+
+        var body = JsonSerializer.Serialize(
+            new
+            {
+                user = new
+                {
+                    username = "other",
+                    email,
+                    password = "password",
+                },
+            }
+        );
+        using var response = operation switch
+        {
+            "register" => await client.PostAsync("/api/users", Json(body)),
+            "login" => await client.PostAsync("/api/users/login", Json(body)),
+            _ => await client.PutAsync("/api/user", Json(body)),
+        };
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = document.RootElement.GetProperty("errors").GetProperty("email");
+        Assert.Equal(error, Assert.Single(errors.EnumerateArray()).GetString());
+    }
+
     [Fact]
     public async Task Route_Prefix_Is_Configurable_And_Swagger_Remains_Available()
     {
