@@ -1,4 +1,3 @@
 [submodule "realworld"]
 	path = realworld
 	url = https://github.com/realworld-apps/realworld.git
-	branch = main

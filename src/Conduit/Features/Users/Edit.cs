@@ -108,9 +108,9 @@ public class Edit
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(Constants.BLANK)
+                .MaximumLength(320)
                 .EmailAddress()
                 .WithMessage(Constants.INVALID)
-                .MaximumLength(320)
                 .When(x => x.User is { EmailSet: true });
             RuleFor(x => x.User.Password)
                 .NotEmpty()

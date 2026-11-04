@@ -5,6 +5,7 @@ using Conduit.Features;
 using Conduit.Features.Users;
 using Conduit.Infrastructure.Errors;
 using Conduit.Infrastructure.Security;
+using FluentValidation;
 using Xunit;
 
 namespace Conduit.IntegrationTests.Features.Users;
@@ -91,5 +92,51 @@ public class EditTests : SliceFixture
         var result = await CreateHandler("user6").Handle(new Edit.Command(userData), default);
 
         Assert.Equal("user6@example.com", result.User.Email);
+    }
+
+    [Theory]
+    [InlineData("no-at-sign")]
+    [InlineData("user@")]
+    [InlineData("@example.com")]
+    public async Task Expect_Edit_User_With_Malformed_Email_Is_Invalid(string email)
+    {
+        var userData = new Edit.UserData();
+        userData.Email = email;
+
+        var ex = await Assert.ThrowsAsync<ValidationException>(() =>
+            SendAsync(new Edit.Command(userData)).AsTask()
+        );
+
+        var error = Assert.Single(ex.Errors);
+        Assert.Equal("User.Email", error.PropertyName);
+        Assert.Equal(Constants.INVALID, error.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task Expect_Edit_User_With_Blank_Email_Is_Blank_Only(string? email)
+    {
+        var userData = new Edit.UserData();
+        userData.Email = email;
+
+        var ex = await Assert.ThrowsAsync<ValidationException>(() =>
+            SendAsync(new Edit.Command(userData)).AsTask()
+        );
+
+        var error = Assert.Single(ex.Errors);
+        Assert.Equal("User.Email", error.PropertyName);
+        Assert.Equal(Constants.BLANK, error.ErrorMessage);
+    }
+
+    [Fact]
+    public void Expect_Edit_User_With_Valid_Email_Passes_Validation()
+    {
+        var userData = new Edit.UserData();
+        userData.Email = "user7@example.com";
+
+        var result = new Edit.CommandValidator().Validate(new Edit.Command(userData));
+
+        Assert.True(result.IsValid);
     }
 }

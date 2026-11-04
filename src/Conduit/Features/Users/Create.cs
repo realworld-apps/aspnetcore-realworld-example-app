@@ -36,9 +36,9 @@ public class Create
                         .Cascade(CascadeMode.Stop)
                         .NotEmpty()
                         .WithMessage(Constants.BLANK)
+                        .MaximumLength(320)
                         .EmailAddress()
-                        .WithMessage(Constants.INVALID)
-                        .MaximumLength(320);
+                        .WithMessage(Constants.INVALID);
                     RuleFor(x => x.User.Password)
                         .NotEmpty()
                         .WithMessage(Constants.BLANK)
