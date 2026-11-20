@@ -23,6 +23,7 @@ public class Article
 
     public Person? Author { get; init; }
 
+    [JsonIgnore]
     public List<Comment> Comments { get; init; } = new();
 
     [NotMapped]
